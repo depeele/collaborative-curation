@@ -1,0 +1,38 @@
+body {
+  font: 100% arial, helvetica, sans-serif;
+
+  background-color: #ccc;
+}
+
+#curation-topics {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+}
+
+.curation-topic {
+}
+
+.curation-topic h1 {
+  font-size:  1em;
+}
+
+.curation-items {
+  list-style: none;
+  margin:     0 0 0 1em;
+  padding:    0;
+}
+
+.curation-item {
+}
+
+.curation-item header .curation-comments {
+}
+
+.curation-item header h1 {
+}
+.curation-item header time {
+}
+
+.curation-item .curation-content {
+}

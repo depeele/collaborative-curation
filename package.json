@@ -1,0 +1,15 @@
+{
+    "name":         "collaborative_curation", 
+    "license":      "MPL 2.0", 
+    "author":       "", 
+    "version":      "0.1", 
+    "dependencies": [
+        "api-utils",
+        "addon-kit",
+        "toolbarbutton",
+        "vold-utils"
+    ],
+    "fullName":     "Collaborative Curation and Reporting", 
+    "id":           "jid1-Ji681JrcZcwuEg", 
+    "description":  "Enable collaborative curation of data available via the browser."
+}
