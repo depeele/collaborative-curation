@@ -3,37 +3,30 @@
  <head>
   <meta http-equiv='Content-type' content='text/html; charset=utf-8' />
   <meta charset='UTF-8' />
-
   <title>Curation Collection</title>
 
   <link rel='stylesheet' type='text/css' href='topics.css'
                                          media='all' />
-
  </head>
  <body>
-  Curation Collection
   <ul id='curation-topics'></ul>
  </body>
 
  <script id='curation-topic' type='text/template'>
-  <li class='curation-topic'>
-   <h1>{{topic}}</h1>
-   <ul class='curation-items'>
-    <!-- curation-item entries -->
+  <li class="curation-topic">
+   <h1><%= topic %></h1>
+   <ul class="curation-items"><% _.each(items, function(item) { %>
+    <li class="curation-item">
+     <header>
+      <div class="curation-comments"><%= (_.isArray(item.comments) ? item.comments.length : item.comments) %></div>
+      <h1><a href="<%= item.url %>" class="url"><%= item.title %></a></h1>
+      <time datetime="<%= item.timestamp %>"><%= new Date(item.timestamp) %></time>
+     </header>
+     <div class="curation-content">
+      <%= item.content %>
+     </div>
+    </li><% }); %>
    </ul>
   </li>
- </script>
-
- <script id='curation-item' type='text/template'>
-    <li class='curation-item'>
-     <header>
-      <div class='curation-comments'>{{commentCount}}</div>
-      <h1><a href='{{url}}' class='url'>{{title}}</a></h1>
-      <time datetime="{{timestamp}}">{{displayTime}}</time>
-     </header>
-     <div class='curation-content'>
-      {{content}}
-     </div>
-    </li>
  </script>
 </html>
