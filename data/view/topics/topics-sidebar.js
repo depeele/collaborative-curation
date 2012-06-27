@@ -5,9 +5,52 @@ var $           = window.$ || unsafeWindow.$,
 // Ensure that Backbone has a proper reference to jQuery
 Backbone.setDomLibrary($);
 
+/****************************************************************************
+ * Date Formatting utilities {
+ *
+ *  Called from the '#curation-topic' template applied in render().
+ *  The template itself is defined in data/view/topics/index.html
+ *
+ */
+function padNum(num, len)
+{
+    len = len || 2;
+    num = ''+ num;
+
+    return '00000000'.substr(0, len - num.length) + num;
+}
+function ts2timeStr(ts)
+{
+    var date        = new Date(ts),
+        hour        = date.getHours(),
+        meridian    = 'a';
+
+    if      (hour >   12)   { meridian = 'p'; hour -= 12; }
+    else if (hour === 12)   { meridian = 'p'; }
+
+    return hour +':'+ padNum(date.getMinutes()) + meridian;
+}
+function ts2dateStr(ts)
+{
+    var date    = new Date(ts),
+        dateStr = date.getFullYear()            +'.'
+                + padNum(date.getMonth() + 1)   +'.'
+                + padNum(date.getDate());
+
+    return dateStr;
+}
+/* Date formatting utilities }
+ ****************************************************************************/
+
 /** @brief  A Backbone View for Topics
  */
 var TopicsView  = Backbone.View.extend({
+    events:     {
+        'click a':                      'openInTab',
+        'click .toggle':                'toggleItem',
+        'click .curation-topic > h1':   'toggleItem'
+    },
+
     templates:  {
         topic:  '#curation-topic'
     },
@@ -43,8 +86,8 @@ var TopicsView  = Backbone.View.extend({
      *                      }
      */
     render: function(topics) {
-        var self        = this;
-    
+        var self    = this;
+
         self.$el.empty();
         topics.forEach(function(topic) {
             var html    = self.templates.topic(topic);
@@ -52,6 +95,56 @@ var TopicsView  = Backbone.View.extend({
         });
 
         return self;
+    },
+
+    /************************************************************************
+     * Event handlers
+     *
+     */
+    openInTab: function(e) {
+        var self    = this,
+            $a      = $(e.target);
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Post that we're ready
+        proxy.postMessage({
+            name:   'sidebar',
+            action: 'visit',
+            url:    $a.attr('href')
+        });
+    },
+
+    toggleItem: function(e) {
+        var self    = this,
+            $toggle = $(e.target),
+            $li     = $toggle.parents('li:first');
+
+        if ($toggle.prop('tagName') == 'H1')
+        {
+            $toggle = $li.find('.toggle');
+        }
+
+        var title   = $toggle.attr('title');
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if ($li.hasClass('collapsed'))
+        {
+            $li.removeClass('collapsed');
+            $li.find('.curation-items').slideDown(function() {
+                $toggle.attr('title', title.replace('expand', 'collapse'));
+            });
+        }
+        else
+        {
+            $li.find('.curation-items').slideUp(function() {
+                $li.addClass('collapsed');
+                $toggle.attr('title', title.replace('collapse', 'expand'));
+            });
+        }
     }
 });
 

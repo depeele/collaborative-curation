@@ -14,13 +14,17 @@
 
  <script id='curation-topic' type='text/template'>
   <li class="curation-topic">
+   <div class="toggle" title="collapse topic">&nbsp;</div>
    <h1><%= topic %></h1>
    <ul class="curation-items"><% _.each(items, function(item) { %>
     <li class="curation-item">
      <header>
       <div class="curation-comments"><%= (_.isArray(item.comments) ? item.comments.length : item.comments) %></div>
       <h1><a href="<%= item.url %>" class="url"><%= item.title %></a></h1>
-      <time datetime="<%= item.timestamp %>"><%= new Date(item.timestamp) %></time>
+      <time datetime="<%= item.timestamp %>">
+       <span class="date"><%= ts2dateStr(item.timestamp) %></span>
+       <span class="time"><%= ts2timeStr(item.timestamp) %></span>
+      </time>
      </header>
      <div class="curation-content">
       <%= item.content %>

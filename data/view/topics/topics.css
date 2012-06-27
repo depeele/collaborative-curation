@@ -1,7 +1,29 @@
-body {
-  font: 100% arial, helvetica, sans-serif;
+html {
+  font:       100% arial, helvetica, sans-serif;
 
-  background-color: #ccc;
+  min-height: 100%;
+  width:      100%;
+
+  margin:     0;
+  padding:    0;
+
+  background-image: -moz-linear-gradient(top left, #444, #222);
+  background-repeat:no-repeat;
+
+  color:        #eee;
+}
+body {
+  margin:   0;
+  padding:  0;
+}
+a {
+  /*color:            #aae;*/
+  color:            #c93;
+  text-decoration:  none;
+  text-shadow:      1px 1px 2px #000;
+}
+a:hover {
+  text-shadow:      1px 1px 2px #000, 0 0 0.5em #fc3, 0 0 1px #b82;
 }
 
 #curation-topics {
@@ -11,28 +33,112 @@ body {
 }
 
 .curation-topic {
+  margin:       0.5em 0.2em;
+  padding:      0 0 0 12px;
+}
+.curation-topic .toggle {
+  position:             absolute;
+  top:                  0.8em;
+  left:                 0.2em;
+
+  width:                8px;
+  height:               8px;
+
+  background-image:     url(images/bullet-opened.png);
+  background-repeat:    no-repeat;
+  background-size:      8px 8px;
+
+  cursor:               pointer;
 }
 
-.curation-topic h1 {
-  font-size:  1em;
+.curation-topic > h1 {
+  font-size:      1em;
+  margin:         0;
+  padding:        0;
+
+  text-shadow:    1px 1px 2px #000;
+  border-bottom:  1px solid #333;
+
+  cursor:         pointer;
+}
+.curation-topic:hover > h1 {
+  text-shadow:    1px 1px 2px #000, 0 0 0.5em #eee, 0 0 1px #999;
 }
 
 .curation-items {
   list-style: none;
-  margin:     0 0 0 1em;
+  margin:     0;
   padding:    0;
 }
 
 .curation-item {
+  position:   relative;
+  font-size:  0.9em;
+  margin:     0;
+  padding:    0.5em 0.25em 0.4em 0.25em;
+
+  border-bottom:  1px dashed #333;
+}
+
+.curation-item header {
+  padding:    0;
+  margin:     0;
 }
 
 .curation-item header .curation-comments {
+  display:    none;
+
+  position:   absolute;
+  font-size:  0.5em;
+
+  left:       -1em;
 }
 
 .curation-item header h1 {
+  font-size:    1em;
+  font-weight:  normal;
+  margin:       0 3.8em 0 0;
+  padding:      0;
 }
 .curation-item header time {
+  position:     absolute;
+  right:        0.2em;
+  top:          0.3em;
+
+  margin:       0;
+  padding:      0;
+
+  width:        3.8em;
+  line-height:  0.65em;
+  text-align:   right;
+
+  color:        #999;
+}
+.curation-item header time > span {
+  margin:     0;
+  padding:    0;
+  font-size:  0.7em;
 }
 
 .curation-item .curation-content {
+  margin:   0 0 0 1em;
+  padding:  0;
+
+  color:        #999;
+
+  font-size:    0.85em;
+}
+
+/**********************************************
+ * Topic close state
+ *
+ */
+.curation-topic.collapsed > h1 {
+  border-bottom:  0;
+}
+.curation-topic.collapsed .toggle {
+  background-image:     url(images/bullet-closed.png);
+}
+.curation-topic.collapsed .curation-items {
+  display:  none;
 }

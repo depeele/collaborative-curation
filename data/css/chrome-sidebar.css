@@ -1,31 +1,135 @@
+/******************************************
+ * State: Visible
+ *
+ */
 #curation-sidebar-splitter {
-  min-width:          0;
-  width:              1px;
+  -moz-appearance:    none;
+  -moz-box-pack:      start !important;
+  -moz-box-align:     start !important;
 
-  border:             0;
+  min-width:          5px !important;
+  max-width:          5px !important;
+  width:              5px !important;
+
   margin:             0;
-  padding:            0;
+  padding:            0.25em 0 0 0 !important;
+  border:             0;
+  border-left:        1px solid #222;
 
-  background-image:   none !important;
+  background-color:     #444;
+  background-image:     -moz-linear-gradient(left, #777, #333) !important;
+  background-repeat:    no-repeat;
 
-  -moz-border-start:  1px solid #242b33;
+  /*
+  background-color:     #444;
+  background-image:     url(../img/sidebar-icon.png),
+                        -moz-linear-gradient(left, #666, #333) !important;
+  background-position:  4px 4px, 0 0 !important;
+  background-repeat:    no-repeat;
+  // */
+}
 
-  -moz-margin-start:  0;
-  -moz-margin-end:    -8px;
+#curation-sidebar-grippy {
+  visibility: hidden;
 }
 
 #curation-sidebar-box {
-  -moz-appearance:  dialog;
-  -moz-appearance:  none;
+  position:           relative !important;
+  -moz-appearance:    none;
 
-  min-width:      18em;
-  max-width:      42em;
+  min-width:          18em;
+  max-width:          42em;
+
+  margin:             0 !important;
+  padding:            0 !important;
+  border:             0;
+  border-left:        1px solid #333;
+
+  background-image:   -moz-linear-gradient(top right, #444, #222);
+  background-repeat:  no-repeat;
+
+  /*
+  padding-left:       16px;
+  background-color:   #444;
+  background-image:   url(../img/sidebar-icon.png), -moz-linear-gradient(top right, #eee, #444);
+  background-position:  2px 2px, 0 0;
+  background-repeat:    no-repeat;
+  // */
+}
+
+#curation-sidebar-header {
+  -moz-box-pack:      end !important;
+  -moz-box-align:     end !important;
+
+  margin:             0;
+  padding:            0.25em 0 0.5em 0.25em !important;
+  border:             0;
+  border-bottom:      1px solid #222;
+  background-color:   #444 !important;
+  background-image:   -moz-linear-gradient(top, #444, #333) !important;
+
+  /*background:         transparent !important;*/
+}
+#curation-sidebar-title {
+  /*padding:            0.2em;*/
+
+  color:              #eee;
+  text-shadow:        1px 1px 3px #222 !important;
+}
+#curation-sidebar-close {
+  min-width:          18px;
+  max-width:          18px;
+  width:              18px;
+  min-height:         18px;
+  max-height:         18px;
+  height:             18px;
+
+  margin:             0 !important;
+  padding:            0 !important;
+  border:             0 !important;
+
+  background-color:     #333 !important;
+  background-image:     url(../img/sidebar-icon.png);
+  background-position:  center center;
+  background-repeat:    no-repeat;
+
+  cursor:               pointer;
 }
 
 #curation-sidebar {
-  background-color: #3f3f3f;
-  color:            #fff;
+  width:        100%;
+  height:       100%;
 
-  width:            100%;
-  height:           100%;
+  border:       0;
+  border-left:  1px solid #333;
+}
+
+/******************************************
+ * State: Hidden
+ *
+ */
+#curation-sidebar-splitter.state-hidden {
+  min-width:          20px !important;
+  max-width:          20px !important;
+  width:              20px !important;
+
+  background-image:   -moz-linear-gradient(left, #666, #333) !important;
+}
+#curation-sidebar-box.state-hidden {
+  display:    none;
+}
+
+.state-hidden #curation-sidebar-grippy {
+  visibility:         visible;
+  min-width:          18px !important;
+  max-width:          18px !important;
+  width:              18px !important;
+  min-height:         18px !important;
+  max-height:         18px !important;
+  height:             18px !important;
+
+  background-color:     #444 !important;
+  background-image:     url(../img/sidebar-icon.png);
+  background-position:  center center;
+  background-repeat:    no-repeat;
 }
