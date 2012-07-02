@@ -48,7 +48,17 @@ var TopicsView  = Backbone.View.extend({
     events:     {
         'click a':                      'openInTab',
         'click .toggle':                'toggleItem',
-        'click .curation-topic > h1':   'toggleItem'
+        'click .curation-topic > h1':   'toggleItem',
+
+        // Drag-and-drop
+        'dragstart [draggable]':        'dragStart',
+        'dragend   [draggable]':        'dragEnd',
+
+        'dragover  [draggable]':        'dragOver',
+        'dragenter [draggable]':        'dragEnter',
+        'dragleave [draggable]':        'dragLeave',
+
+        'drop      [draggable]':        'dragLeave',
     },
 
     templates:  {
@@ -126,6 +136,8 @@ var TopicsView  = Backbone.View.extend({
             $toggle = $li.find('.toggle');
         }
 
+        console.log("toggleItem");
+
         var title   = $toggle.attr('title');
 
         e.preventDefault();
@@ -145,6 +157,117 @@ var TopicsView  = Backbone.View.extend({
                 $toggle.attr('title', title.replace('collapse', 'expand'));
             });
         }
+    },
+
+    /**********************
+     * Drag-and-drop
+     *
+     */
+    dragStart: function(e) {
+        var self    = this,
+            $src    = $(e.target);
+
+        if (! $src.attr('draggable')) { return; }
+
+        console.log("drag start: src[", $src.attr('class'), "]");
+
+        $src.addClass('dragging');
+
+        self.dragging = $src;
+
+        e.dataTransfer.effectAllowed = 'move';
+
+        e.dataTransfer.setData('text/html', $src.html());
+        e.dataTransfer.setData('application/x-moz-node', $src[0]);
+    },
+    dragEnd: function(e) {
+        var self    = this,
+            $src    = (self.dragging ? self.dragging : $(e.target));
+
+        $src.removeClass('dragging');
+
+        console.log("drag end: src[", $src.attr('class'), "]");
+
+        self.dragging = null;
+    },
+
+    dragOver: function(e) {
+        var self    = this,
+            $tgt    = $(e.target);
+
+        /*
+        if (! $tgt.attr('droppable'))
+        {
+            $tgt = $tgt.parents('[droppable]:first'); 
+        }
+        // */
+        if ( (! $tgt.attr('droppable'))  ||
+             ($tgt.hasClass('dragging')) ||
+             ($tgt.hasClass('drag-over')) )
+        { return; }
+
+        console.log("drag over: tgt[", $tgt.attr('class'), "]");
+
+        e.dataTransfer.dropEffect = 'move';
+
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    },
+    dragEnter: function(e) {
+        var self    = this,
+            $tgt    = $(e.target);
+
+        /*
+        if (! $tgt.attr('droppable'))
+        {
+            $tgt = $tgt.parents('[droppable]:first'); 
+        }
+        // */
+        if ( (! $tgt.attr('droppable'))  ||
+             ($tgt.hasClass('dragging')) ||
+             ($tgt.hasClass('drag-over')) )
+        { return; }
+
+        console.log("drag enter: tgt[", $tgt.attr('class'), "]");
+
+        $tgt.addClass('drag-over');
+
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    },
+    dragLeave: function(e) {
+        var self    = this,
+            $tgt    = $(e.target);
+
+        /*
+        if (! $tgt.attr('droppable'))
+        {
+            $tgt = $tgt.parents('[droppable]:first'); 
+        }
+        // */
+        if ( (! $tgt.attr('droppable'))  ||
+             ($tgt.hasClass('dragging')) ||
+             ($tgt.hasClass('drag-over')) )
+        { return; }
+
+        console.log("drag leave: tgt[", $tgt.attr('class'), "]");
+
+        $tgt.removeClass('drag-over');
+
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    },
+
+    dragDrop: function(e) {
+        var self    = this,
+            $tgt    = $(e.target);
+
+        e.stopPropagation();
+
+        console.log("drag drop: src[", $src.attr('class'), "]");
     }
 });
 

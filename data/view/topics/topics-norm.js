@@ -51,14 +51,14 @@ var TopicsView  = Backbone.View.extend({
         'click .curation-topic > h1':   'toggleItem',
 
         // Drag-and-drop
-        'dragstart [draggable]':        'dragStart',
-        'dragend   [draggable]':        'dragEnd',
+        'dragstart li':                 'dragStart',
+        'dragend   li':                 'dragEnd',
 
-        'dragover  [droppable]':        'dragOver',
-        'dragenter [droppable]':        'dragEnter',
-        'dragleave [droppable]':        'dragLeave',
+        'dragover  li':                 'dragOver',
+        'dragenter li':                 'dragEnter',
+        'dragleave li':                 'dragLeave',
 
-        'drop      [droppable]':        'dragDrop'
+        'drop      li':                 'dragDrop'
     },
 
     templates:  {
@@ -175,6 +175,11 @@ var TopicsView  = Backbone.View.extend({
         if (! dataTransfer) { return; }
 
         var $src    = $(e.target);
+        if (! $src.attr('draggable'))
+        {
+            // Immediate propagate up to the top-level 'draggable'
+            $src = $src.parents('[draggable]:first');
+        }
 
         /*
         var $tags   = $src.parent().find( $src.prop('tagName') );
@@ -187,6 +192,7 @@ var TopicsView  = Backbone.View.extend({
         $src.addClass('dragging');
         self.dragging  = $src;
 
+        //dataTransfer.effectAllowed = 'move';
         dataTransfer.setData('text/html', $src.html());
         dataTransfer.setData('application/x-moz-node', $src[0]);
     },
@@ -217,17 +223,47 @@ var TopicsView  = Backbone.View.extend({
             dataTransfer    = (e.dataTransfer
                                 ? e.dataTransfer
                                 : e.originalEvent.dataTransfer),
+            $src            = self.dragging,
             $tgt            = $(e.target);
 
-        e.preventDefault();
+        if ((! dataTransfer) || (! $tgt.attr('droppable')))
+        {
+            e.preventDefault();
+            return;
+        }
 
-        if ((! dataTransfer) || (! $tgt.attr('droppable'))) { return; }
+        /*
+        var droppable   = $tgt.attr('droppable').split(/\s+/),
+            canDrop     = (($tgt.get(0) !== $src.get(0)) &&
+                           _.reduce(droppable, function(res, name) {
+                            return (res || $src.hasClass(name));
+                           }, false));
+
+        var $tgtTags   = $tgt.parent().find( $tgt.prop('tagName') ),
+            $srcTags   = $src.parent().find( $src.prop('tagName') );
+        console.log("drag over: src[ %s-%d.%s ], tgt[ %s-%d.%s ]: "
+                    +   "droppable[ %s ]: %sdrop",
+                    $src.prop('tagName'),
+                    $srcTags.index($src),
+                    $src.attr('class'),
+                    $tgt.prop('tagName'),
+                    $tgtTags.index($tgt),
+                    $tgt.attr('class'),
+                    droppable.join(', '),
+                    (canDrop ? ' ' : '!'));
+
+        if (! canDrop)  { return false; }
+        // */
 
         dataTransfer.dropEffect = 'move';
+        e.preventDefault();
     },
     dragEnter: function(e) {
         var self    = this,
-            $tgt    = $(e.target);
+            $tgt    = $(e.target),
+            $src    = self.dragging;
+
+        if (! $src) { return; }
 
         if (! $tgt.attr('droppable'))
         {
@@ -240,16 +276,31 @@ var TopicsView  = Backbone.View.extend({
             return;
         }
 
-        var dragCount   = $tgt.data('drag-count') || 0;
-        /*
-        var $tags       = $tgt.parent().find( $tgt.prop('tagName') );
-        console.log("drag enter: tgt[ %s-%d.%s ]: %d",
+        // /*
+        var droppable   = $tgt.attr('droppable').split(/\s+/),
+            canDrop     = (($tgt.get(0) !== $src.get(0)) &&
+                           _.reduce(droppable, function(res, name) {
+                            return (res || $src.hasClass(name));
+                           }, false));
+
+        var $tgtTags   = $tgt.parent().find( $tgt.prop('tagName') ),
+            $srcTags   = $src.parent().find( $src.prop('tagName') );
+        console.log("drag enter: src[ %s-%d.%s ], tgt[ %s-%d.%s ]: "
+                    +   "droppable[ %s ]: %sdrop",
+                    $src.prop('tagName'),
+                    $srcTags.index($src),
+                    $src.attr('class'),
                     $tgt.prop('tagName'),
-                    $tags.index($tgt),
+                    $tgtTags.index($tgt),
                     $tgt.attr('class'),
-                    dragCount);
+                    droppable.join(', '),
+                    (canDrop ? ' ' : '!'));
+
+        if (! canDrop)  { return false; }
         // */
 
+
+        var dragCount       = $tgt.data('drag-count') || 0;
         if (dragCount < 1) { $tgt.addClass('drag-over'); }
         dragCount++;
         $tgt.data('drag-count', dragCount);
@@ -301,6 +352,11 @@ var TopicsView  = Backbone.View.extend({
 
         if (! $src) { return; }
 
+        var dataTransfer    = (e.dataTransfer
+                                ? e.dataTransfer
+                                : e.originalEvent.dataTransfer);
+        if (! dataTransfer) { return; }
+
         var $tgt    = $(e.target);
         if (! $tgt.attr('droppable'))
         {
@@ -313,16 +369,30 @@ var TopicsView  = Backbone.View.extend({
             return;
         }
 
-        /*
+        var droppable   = $tgt.attr('droppable').split(/\s+/),
+            canDrop     = (($tgt.get(0) !== $src.get(0)) &&
+                           _.reduce(droppable, function(res, name) {
+                            return (res || $src.hasClass(name));
+                           }, false));
+        if (! canDrop)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }
+
+        // /*
         var $tgtTags   = $tgt.parent().find( $tgt.prop('tagName') ),
             $srcTags   = $src.parent().find( $src.prop('tagName') );
-        console.log("drag drop: src[ %s-%d.%s ], tgt[ %s-%d.%s ]",
+        console.log("drag drop: src[ %s-%d.%s ], tgt[ %s-%d.%s ]: types[ %s ]",
                     $src.prop('tagName'),
                     $srcTags.index($src),
                     $src.attr('class'),
                     $tgt.prop('tagName'),
                     $tgtTags.index($tgt),
-                    $tgt.attr('class'));
+                    $tgt.attr('class'),
+                    [].join.call(dataTransfer.types, ','));
         // */
 
         // Move the source element to its new location
@@ -343,7 +413,10 @@ var TopicsView  = Backbone.View.extend({
         $tgt.removeClass('drag-over');
         $tgt.data('drag-count', 0);
 
+        e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
     }
 });
 

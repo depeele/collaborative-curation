@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta http-equiv='Content-type' content='text/html; charset=utf-8' />
+  <meta charset='UTF-8' />
+  <title>Curation Collection</title>
+
+  <link rel='stylesheet' type='text/css' href='data/view/topics/topics.css'
+                                         media='all' />
+ </head>
+ <body>
+  <ul id='curation-topics'></ul>
+ </body>
+
+ <script id='curation-topic' type='text/template'>
+  <li class="curation-topic" draggable="true"
+                             droppable="curation-topic curation-item">
+   <div class="toggle" title="collapse topic">&nbsp;</div>
+   <h1><%= topic %></h1>
+   <ul class="curation-items"><% _.each(items, function(item) { %>
+    <li class="curation-item" draggable="true"
+                              droppable="curation-item">
+     <header>
+      <div class="curation-comments"><%= (_.isArray(item.comments) ? item.comments.length : item.comments) %></div>
+      <h1><a href="<%= item.url %>" class="url"><%= item.title %></a></h1>
+      <time datetime="<%= item.timestamp %>">
+       <span class="date"><%= ts2dateStr(item.timestamp) %></span>
+       <span class="time"><%= ts2timeStr(item.timestamp) %></span>
+      </time>
+     </header>
+     <div class="curation-content">
+      <%= item.content %>
+     </div>
+    </li><% }); %>
+   </ul>
+  </li>
+ </script>
+
+ <script src='data/js/jquery.min.js'></script>
+ <script src='data/js/underscore.min.js'></script>
+ <script src='data/js/backbone.min.js'></script>
+ <script src='data/view/topics/topics-norm.js'></script>
+
+ <script>
+$(document).ready(function() {
+
+var msg     = {
+        "topics":   [
+            {"topic":"Development",
+             "items":   [
+                {"url":"https://developer.mozilla.org/en-US/",
+                 "title":"Mozilla Developer",
+                 "timestamp":1341225011904,
+                 "content":"","comments":[]
+                },
+                {"url":"https://developer.mozilla.org/en/JavaScript/Reference",
+                 "title":"Javascript",
+                 "timestamp":1341225011904,
+                 "content":"Nice, exhaustive reference from Mozilla.",
+                 "comments":[]
+                },
+                {"url":"http://api.jquery.com/",
+                 "title":"jQuery",
+                 "timestamp":1341225011904,
+                 "content":"",
+                 "comments":[]
+                },
+                {"url":"http://documentcloud.github.com/backbone/#",
+                 "title":"Backbone",
+                 "timestamp":1341225011904,
+                 "content":"",
+                 "comments":[]
+                },
+                {"url":"http://documentcloud.github.com/underscore/#",
+                 "title":"Underscore",
+                 "timestamp":1341225011904,
+                 "content":"",
+                 "comments":[]
+                },
+                {"url":"http://nodejs.org/api/",
+                 "title":"node.js",
+                 "timestamp":1341225011904,
+                 "content":"",
+                 "comments":[]
+                }
+             ]
+            },
+            {"topic":"Misc",
+             "items":   [
+                {"url":"https://google.com/",
+                 "title":"google",
+                 "timestamp":1341225011904,
+                 "content":"",
+                 "comments":[]
+                }
+             ]
+            },
+        ]
+    };
+
+$('#curation-topics').trigger('load', msg);
+});
+ </script>
+</html>

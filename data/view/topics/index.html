@@ -13,11 +13,13 @@
  </body>
 
  <script id='curation-topic' type='text/template'>
-  <li class="curation-topic">
+  <li class="curation-topic" draggable="true"
+                             droppable="curation-topic curation-item">
    <div class="toggle" title="collapse topic">&nbsp;</div>
    <h1><%= topic %></h1>
    <ul class="curation-items"><% _.each(items, function(item) { %>
-    <li class="curation-item">
+    <li class="curation-item" draggable="true"
+                              droppable="curation-item">
      <header>
       <div class="curation-comments"><%= (_.isArray(item.comments) ? item.comments.length : item.comments) %></div>
       <h1><a href="<%= item.url %>" class="url"><%= item.title %></a></h1>
