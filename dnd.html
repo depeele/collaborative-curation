@@ -28,31 +28,40 @@ body {
  </body>
 
  <script id='curation-topic' type='text/template'>
-  <li class="curation-topic" draggable="true"
-                             droppable="curation-topic curation-item">
-   <div class="toggle" title="collapse topic">&nbsp;</div>
-   <h1><%= topic %></h1>
-   <ul class="curation-items">
-     <!-- curation-item entries -->
+   <header>
+    <div class="toggle" title="collapse topic">&nbsp;</div>
+    <h1><%= topic %></h1>
+   </header>
+   <ul class="curation-pages">
+     <!-- curation-page entries -->
    </ul>
-  </li>
  </script>
 
- <script id='curation-item' type='text/template'>
-    <li class="curation-item" draggable="true"
-                              droppable="curation-item">
+ <script id='curation-page' type='text/template'>
      <header>
-      <div class="curation-comments"><%= (_.isArray(comments) ? comments.length : comments) %></div>
+      <div class="toggle" title="collapse topic">&nbsp;</div>
       <h1><a href="<%= url %>" class="url"><%= title %></a></h1>
+      <div class="curation-comments"><%= (_.isArray(comments) ? comments.length : comments) %></div>
       <time datetime="<%= timestamp %>">
        <span class="date"><%= ts2dateStr(timestamp) %></span>
        <span class="time"><%= ts2timeStr(timestamp) %></span>
       </time>
      </header>
+     <ul class="curation-items">
+      <!-- curation-item entries -->
+     </ul>
+ </script>
+
+ <script id='curation-item' type='text/template'>
+     <div class="curation-comments"><%= (_.isArray(comments) ? comments.length : comments) %></div>
+     <time datetime="<%= timestamp %>">
+      <span class="date"><%= ts2dateStr(timestamp) %></span>
+      <span class="time"><%= ts2timeStr(timestamp) %></span>
+     </time>
      <div class="curation-content">
       <%= content %>
      </div>
-    </li>
+     <a class="curation-location" href="<%= location %>">&nbsp;</a>
  </script>
 
  <script src='data/js/jquery.min.js'></script>
@@ -65,52 +74,55 @@ $(document).ready(function() {
 var msg     = {
         "topics":   [
             {"topic":"Development",
-             "items":   [
+             "pages":   [
                 {"url":"https://developer.mozilla.org/en-US/",
                  "title":"Mozilla Developer",
                  "timestamp":1341225011904,
-                 "content":"","comments":[]
-                },
+                 "comments":[],
+                 "items":[]},
                 {"url":"https://developer.mozilla.org/en/JavaScript/Reference",
                  "title":"Javascript",
                  "timestamp":1341225011904,
-                 "content":"Nice, exhaustive reference from Mozilla.",
-                 "comments":[]
-                },
+                 "comments":[],
+                 "items":[
+                    {"location":"#section_2 > p:first",
+                     "timestamp":1341226022904,
+                     "content":"Other object in the global scope are either created by the user script or provided by the host application",
+                     "comments":[]},
+                    {"location":"#section_5 > dl > dd.8",
+                     "timestamp":1341228022904,
+                     "content":"Operator precedence defines the order in which operators are evaluated.",
+                     "comments":[]}
+                 ]},
                 {"url":"http://api.jquery.com/",
                  "title":"jQuery",
                  "timestamp":1341225011904,
-                 "content":"",
-                 "comments":[]
-                },
+                 "comments":[],
+                 "items":[]},
                 {"url":"http://documentcloud.github.com/backbone/#",
                  "title":"Backbone",
                  "timestamp":1341225011904,
-                 "content":"",
-                 "comments":[]
-                },
+                 "comments":[],
+                 "items":[]},
                 {"url":"http://documentcloud.github.com/underscore/#",
                  "title":"Underscore",
                  "timestamp":1341225011904,
-                 "content":"",
-                 "comments":[]
-                },
+                 "comments":[],
+                 "items":[]},
                 {"url":"http://nodejs.org/api/",
                  "title":"node.js",
                  "timestamp":1341225011904,
-                 "content":"",
-                 "comments":[]
-                }
+                 "comments":[],
+                 "items":[]},
              ]
             },
             {"topic":"Misc",
-             "items":   [
+             "pages":   [
                 {"url":"https://google.com/",
                  "title":"google",
                  "timestamp":1341225011904,
-                 "content":"",
-                 "comments":[]
-                }
+                 "comments":[],
+                 "items":[]}
              ]
             },
         ]

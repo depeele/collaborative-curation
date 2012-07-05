@@ -54,7 +54,7 @@ a:hover {
 .curation-topic .toggle {
   position:             absolute;
   top:                  0.4em;
-  left:                 0;
+  left:                 -4px;
 
   width:                8px;
   height:               8px;
@@ -66,7 +66,7 @@ a:hover {
   cursor:               pointer;
 }
 
-.curation-topic > h1 {
+.curation-topic > header h1 {
   font-size:      1em;
   margin:         0;
   padding:        0;
@@ -76,17 +76,17 @@ a:hover {
 
   cursor:         pointer;
 }
-.curation-topic:hover > h1 {
+.curation-topic:hover > header h1 {
   text-shadow:    1px 1px 2px #000, 0 0 0.5em #eee, 0 0 1px #999;
 }
 
-.curation-items {
+.curation-pages {
   list-style: none;
   margin:     0;
   padding:    0;
 }
 
-.curation-item {
+.curation-page {
   position:   relative;
   font-size:  0.9em;
   margin:     0;
@@ -95,12 +95,27 @@ a:hover {
   border-bottom:  1px dashed #333;
 }
 
-.curation-item header {
+.curation-page header {
   padding:    0;
   margin:     0;
 }
 
-.curation-item header .curation-comments {
+.curation-page header .toggle {
+  top:        0.8em;
+  left:       -8px;
+
+  visibility: hidden;
+}
+.curation-page.collapsable header .toggle {
+  visibility: visible;
+}
+.curation-page header h1 {
+  font-size:    1em;
+  font-weight:  normal;
+  margin:       0 3.8em 0 0;
+  padding:      0;
+}
+.curation-page .curation-comments {
   display:    none;
 
   position:   absolute;
@@ -109,13 +124,7 @@ a:hover {
   left:       -1em;
 }
 
-.curation-item header h1 {
-  font-size:    1em;
-  font-weight:  normal;
-  margin:       0 3.8em 0 0;
-  padding:      0;
-}
-.curation-item header time {
+.curation-page time {
   position:     absolute;
   right:        0.2em;
   top:          0.3em;
@@ -129,19 +138,50 @@ a:hover {
 
   color:        #999;
 }
-.curation-item header time > span {
+.curation-page time > span {
   margin:     0;
   padding:    0;
   font-size:  0.7em;
 }
 
+.curation-items {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+}
+
+.curation-item {
+  position:       relative;
+  margin:         0 0 0 0.5em;
+  padding:        0.1em 3.8em 0.1em 15px; /* right:time, left:location */
+  border-bottom:  1px dashed #333;
+}
+.curation-item:last-child {
+  border-bottom:  none;
+}
+
 .curation-item .curation-content {
-  margin:   0 0 0 1em;
-  padding:  0;
+  margin:     0;
+  padding:    0;
 
-  color:        #999;
+  color:      #999;
 
-  font-size:    0.85em;
+  font-size:  0.85em;
+}
+.curation-item .curation-location {
+  position:         absolute;
+  top:              0.1em;
+  left:             0;
+
+  visibility:       hidden;
+
+  width:            10px;
+  height:           10px;
+
+  background-image: url(../../images/visit.png);
+}
+.curation-item:hover .curation-location {
+  visibility:       visible;
 }
 
 /**********************************************
@@ -151,11 +191,12 @@ a:hover {
 .curation-topic.collapsed > h1 {
   border-bottom:  0;
 }
-.curation-topic.collapsed .toggle {
-  background-image:     url(images/bullet-closed.png);
-}
-.curation-topic.collapsed .curation-items {
+.curation-topic.collapsed .curation-pages {
   display:  none;
+}
+
+.collapsed .toggle {
+  background-image:     url(images/bullet-closed.png);
 }
 
 /**********************************************
@@ -166,12 +207,10 @@ a:hover {
   opacity:  0.4;
 }
 
+.curation-topic.drag-over,
+.curation-page.drag-over,
 .curation-item.drag-over {
   border-bottom:  2px dashed #333;
-}
-
-.curation-topic.drag-over > h1 {
-  border-bottom-width:  2px;
 }
 
 .curation-topic.collapsed.drag-over {
