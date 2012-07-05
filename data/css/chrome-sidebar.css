@@ -22,7 +22,7 @@
 
   /*
   background-color:     #444;
-  background-image:     url(../img/sidebar-icon.png),
+  background-image:     url(../images/sidebar-icon.png),
                         -moz-linear-gradient(left, #666, #333) !important;
   background-position:  4px 4px, 0 0 !important;
   background-repeat:    no-repeat;
@@ -51,7 +51,7 @@
   /*
   padding-left:       16px;
   background-color:   #444;
-  background-image:   url(../img/sidebar-icon.png), -moz-linear-gradient(top right, #eee, #444);
+  background-image:   url(../images/sidebar-icon.png), -moz-linear-gradient(top right, #eee, #444);
   background-position:  2px 2px, 0 0;
   background-repeat:    no-repeat;
   // */
@@ -89,7 +89,7 @@
   border:             0 !important;
 
   background-color:     #333 !important;
-  background-image:     url(../img/sidebar-icon.png);
+  background-image:     url(../images/sidebar-icon.png);
   background-position:  center center;
   background-repeat:    no-repeat;
 
@@ -129,7 +129,7 @@
   height:             18px !important;
 
   background-color:     #444 !important;
-  background-image:     url(../img/sidebar-icon.png);
+  background-image:     url(../images/sidebar-icon.png);
   background-position:  center center;
   background-repeat:    no-repeat;
 }

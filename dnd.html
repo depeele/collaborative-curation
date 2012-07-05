@@ -7,9 +7,24 @@
 
   <link rel='stylesheet' type='text/css' href='data/view/topics/topics.css'
                                          media='all' />
+  <style type='text/css'>
+body {
+    padding:    1em;
+}
+  </style>
  </head>
  <body>
-  <ul id='curation-topics'></ul>
+  <div id='collaborative-curation'>
+   <input type='text' class='new-topic' placeholder='New Topic' />
+   <ul class='curation-topics'></ul>
+  </div>
+
+  <h3>Additional, "External" drag sources</h3>
+  <ul>
+   <li>Here is some text that could be highlighted and dragged, along with a
+   link to information about <a href="http://www.microsoft.com/surface/en/us/default.aspx">Microsoft Surface</a></li>
+   <li>A simple image: <img src='data/images/sidebar-icon.png' alt='icon' /></li>
+  </ul>
  </body>
 
  <script id='curation-topic' type='text/template'>
@@ -17,23 +32,27 @@
                              droppable="curation-topic curation-item">
    <div class="toggle" title="collapse topic">&nbsp;</div>
    <h1><%= topic %></h1>
-   <ul class="curation-items"><% _.each(items, function(item) { %>
+   <ul class="curation-items">
+     <!-- curation-item entries -->
+   </ul>
+  </li>
+ </script>
+
+ <script id='curation-item' type='text/template'>
     <li class="curation-item" draggable="true"
                               droppable="curation-item">
      <header>
-      <div class="curation-comments"><%= (_.isArray(item.comments) ? item.comments.length : item.comments) %></div>
-      <h1><a href="<%= item.url %>" class="url"><%= item.title %></a></h1>
-      <time datetime="<%= item.timestamp %>">
-       <span class="date"><%= ts2dateStr(item.timestamp) %></span>
-       <span class="time"><%= ts2timeStr(item.timestamp) %></span>
+      <div class="curation-comments"><%= (_.isArray(comments) ? comments.length : comments) %></div>
+      <h1><a href="<%= url %>" class="url"><%= title %></a></h1>
+      <time datetime="<%= timestamp %>">
+       <span class="date"><%= ts2dateStr(timestamp) %></span>
+       <span class="time"><%= ts2timeStr(timestamp) %></span>
       </time>
      </header>
      <div class="curation-content">
-      <%= item.content %>
+      <%= content %>
      </div>
-    </li><% }); %>
-   </ul>
-  </li>
+    </li>
  </script>
 
  <script src='data/js/jquery.min.js'></script>
@@ -43,7 +62,6 @@
 
  <script>
 $(document).ready(function() {
-
 var msg     = {
         "topics":   [
             {"topic":"Development",
@@ -98,7 +116,7 @@ var msg     = {
         ]
     };
 
-$('#curation-topics').trigger('load', msg);
+$('#collaborative-curation').trigger('load', msg);
 });
  </script>
 </html>

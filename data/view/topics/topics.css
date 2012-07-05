@@ -26,7 +26,20 @@ a:hover {
   text-shadow:      1px 1px 2px #000, 0 0 0.5em #fc3, 0 0 1px #b82;
 }
 
-#curation-topics {
+#collaborative-curation input {
+  border-radius:  0.5em;
+  padding:        0.2em;
+}
+
+.new-topic {
+  width:          100%;
+
+  background-image:     url(../../images/add.png);
+  background-position:  right center;
+  background-repeat:    no-repeat;
+}
+
+.curation-topics {
   list-style: none;
   margin:     0;
   padding:    0;
@@ -159,4 +172,8 @@ a:hover {
 
 .curation-topic.drag-over > h1 {
   border-bottom-width:  2px;
+}
+
+.curation-topic.collapsed.drag-over {
+  border-bottom:  2px dashed #333;
 }
