@@ -157,7 +157,7 @@ var TopicsView  = Backbone.View.extend({
         e.preventDefault();
         e.stopPropagation();
 
-        console.log("Visit %s", $a.attr('href'));
+        console.log("TopicsView::openInTab(): %s", $a.attr('href'));
 
         /* Post that we're ready
         proxy.postMessage({
@@ -178,7 +178,7 @@ var TopicsView  = Backbone.View.extend({
             $toggle = $li.find('.toggle');
         }
 
-        console.log("toggleItem");
+        console.log("TopicsView::toggleItem()");
 
         var title   = $toggle.attr('title');
 
@@ -306,22 +306,10 @@ var TopicView   = Backbone.View.extend({
 
     /** @brief  Set a new model and trigger a (re)render.
      *  @param  model   A Topic model of the form:
-     *                      {topic: topic,
-     *                       pages: []}
-     *
-     *                  Each page has the form:
-     *                      {url:       url,
-     *                       title:     title,
-     *                       timestamp: timestamp,
-     *                       content:   content,
-     *                       items:     []}
-     *
-     *                  Each item has the form:
-     *                      {location:  intra-page location,
-     *                       timestamp: timestamp,
-     *                       content:   content,
-     *                       comments:  [ comments ] or commentCount
-     *                      }
+     *                      {id:    uid,
+     *                       title: topic,
+     *                       order: sort-order,
+     *                       items: []}
      */
     setModel: function(model) {
         var self    = this;
@@ -340,25 +328,24 @@ var TopicView   = Backbone.View.extend({
             topic   = self.options.model;
         if (! topic)    { return; }
 
-        var $topic  = $( self.template(topic) ),
-            $pages  = $topic.find('.curation-pages');
+        var $topic  = $( self.template(topic) );
 
         self.$el.attr('draggable', true);
         self.$el.empty();
         self.$el.append( $topic );
 
         self.$toggle = self.$el.find('> header .toggle');
-        self.$pages  = self.$el.find('> .curation-pages');
+        self.$items  = self.$el.find('> .curation-items');
 
-        self.$pages.empty();
+        self.$items.empty();
 
         /* Create each page and item individually so we can attach data to
          * each.
          */
-        topic.pages.forEach(function(page) {
-            var view    = new PageView({model: page});
+        topic.items.forEach(function(item) {
+            var view    = new ItemView({model: item});
             
-            self.$pages.append( view.$el );
+            self.$items.append( view.$el );
         });
 
         return self;
@@ -389,13 +376,13 @@ var TopicView   = Backbone.View.extend({
         if (self.$el.hasClass('collapsed'))
         {
             self.$el.removeClass('collapsed');
-            self.$pages.slideDown(function() {
+            self.$items.slideDown(function() {
                 self.$toggle.attr('title', title.replace('expand', 'collapse'));
             });
         }
         else
         {
-            self.$pages.slideUp(function() {
+            self.$items.slideUp(function() {
                 self.$el.addClass('collapsed');
                 self.$toggle.attr('title', title.replace('collapse', 'expand'));
             });
@@ -406,10 +393,12 @@ var TopicView   = Backbone.View.extend({
 
     /**********************
      * Drag-and-drop
+     *  .curation-item
+     *  or "external" item
      *
      */
     canDrop: function($src) {
-        return ((! $src) || ($src.hasClass('curation-page')));
+        return ((! $src) || ($src.hasClass('curation-item')));
     },
     dragOver: function(e) {
         var self            = this,
@@ -427,11 +416,8 @@ var TopicView   = Backbone.View.extend({
     dragEnter: function(e) {
         var self        = this,
             $src        = gDragging,
-            $tgt        = $(e.target).closest('.curation-topic'+
-                                                (gDragging
-                                                    ? ',.curation-page'
-                                                    : '')),
-            dragCount   = ($tgt.data('drag-count') || 0);
+            $tgt        = $(e.target).closest('.curation-topic,.curation-item'),
+            dragCount   = ($tgt.data('drag-count') || 0) + 1;
 
         if ($src)
         {
@@ -441,23 +427,26 @@ var TopicView   = Backbone.View.extend({
                 return;
             }
 
-            // /*
+            /*
             var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-            console.log("TopicView::dragEnter: src[ %s-%d.%s ]",
+            console.log("TopicView::dragEnter: src[ %s-%d.%s ]: %d",
                         $src.prop('tagName'),
                         $srcTags.index($src),
-                        $src.attr('class'));
+                        $src.attr('class'),
+                        dragCount);
             // */
         }
+        /*
         else
         {
-            console.log("TopicView::dragEnter: EXTERNAL item: %s.%s",
-                        $tgt.prop('tagName'), $tgt.attr('class'));
+            console.log("TopicView::dragEnter: EXTERNAL item: %s.%s: %d",
+                        $tgt.prop('tagName'), $tgt.attr('class'), dragCount);
         }
+        // */
 
         $('.drag-over').removeClass('drag-over');
         $tgt.addClass('drag-over');
-        $tgt.data('drag-count', dragCount+1);
+        $tgt.data('drag-count', dragCount);
 
         e.preventDefault();
         e.stopPropagation();
@@ -467,15 +456,12 @@ var TopicView   = Backbone.View.extend({
     dragLeave: function(e) {
         var self        = this,
             $src        = gDragging,
-            $tgt        = $(e.target).closest('.curation-topic'+
-                                                (gDragging
-                                                    ? ',.curation-page'
-                                                    : '')),
+            $tgt        = $(e.target).closest('.curation-topic,.curation-item'),
             dragCount   = ($tgt.data('drag-count') || 1) - 1;
 
-        if ((dragCount < 1) && self.canDrop($src))
+        if (dragCount < 1)
         {
-            // /*
+            /*
             if ($src)
             {
                 var $srcTags   = $src.parent()
@@ -489,7 +475,6 @@ var TopicView   = Backbone.View.extend({
             // */
 
             $tgt.removeClass('drag-over');
-
         }
 
         $tgt.data('drag-count', (dragCount > 0 ? dragCount : 0));
@@ -520,76 +505,156 @@ var TopicView   = Backbone.View.extend({
                     $src.attr('class'));
         // */
 
-        var $tgt    = $(e.target).closest('.curation-page,.curation-topic');
+        var $tgt    = $(e.target).closest('.curation-item,.curation-topic');
         if (! gDragging)
         {
-            /* The user is dragging an "external", non-sidebar node.
+            /* Dropping an "External" item.
              *
-             * See if there is already a Page entry for the source page.
-             *  - no  - create a new page entry
+             * Type-based Heuristic:
+             *  - 'application/x-moz-file' (or dataTransfer.files.length > 0)
+             *      dropping an external file from the system
+             *          use dataTransfer.files
+             *              {size, type, name, mozFullPath}
+             *  - 'text/x-moz-url' but no 'text/_moz_htmlcontext'
+             *      dropping a URL from the address bar
+             *          use 'text/x-moz-url', splitting the URL from the title
+             *  - 'text/x-moz-place'
+             *      dropping a bookmark entry {title, uri}
+             *          use 'text/html'
+             *  - 'text/html'
+             *      dropping pre-formated HTML -- use it directly;
+             *  - 'text/plain'
+             *      dropping plain-text -- ignore??;
              */
-            var srcUrl      = 'url://of.source/page',
-                selector    = '.curation-page > header a[href="'
-                            +   srcUrl.replace(/([^\\])'/g, '$1\\\'')
-                            +                                   '"]',
-                $page, view;
-            try {
-                $page = self.$el.find( selector );
-                $page = $page.parents('.curation-page:first');
-            } catch(e) {
-                console.log("ERROR: ", e);
-            }
+            console.log("TopicView::dragDrop: dataTransfer types:");
+            _.each(dataTransfer.types, function(type) {
+                console.log("TopicView::dragDrop:   %s: %s",
+                            type, dataTransfer.getData(type));
+            });
 
-            if ($page && ($page.length < 1))
+            var types   = [].slice.call(dataTransfer.types, 0),
+                items   = [];
+            if (dataTransfer.files && (dataTransfer.files.length > 0))
             {
-                // Create a new page entry
-                var page    = {
-                        url:        srcUrl,
-                        title:      "Page Title",
+                // Create an entry for each file
+                _.each(dataTransfer.files, function(file) {
+                    var url         = 'file://'+ file.mozFullPath,
+                        title       = file.name,
+                        selector    = '';
+
+                    items.push({
                         timestamp:  (new Date()).getTime(),
-                        comments:   [],
-                        items:      []
-                    },
-                    view    = new PageView({model: page});
-            
-                self.$pages.append( view.$el );
-
-                $page = view.$el;
-            }
-            else if ($page)
-            {
-                view = $page.data('PageView');
-            }
-
-            if (view)
-            {
-                /* Create a new entry based upon this node and add it to the
-                 * page entry.
-                 */
-                var item    = {
-                        location:   'inter-page selector',
-                        timestamp:  (new Date()).getTime(),
-                        content:    dataTransfer.getData('text/html'),
+                        content:    '<a href="'+ url +'">'+ title +'</a>',
+                        url:        url,
+                        selector:   selector,
+                        topicId:    self.options.model.id,
+                        order:      '',
                         comments:   []
-                    };
-
-                console.log("TopicView::dragDrop(): Drop new item at %s.%s: %s",
-                            $tgt.prop('tagName'), $tgt.attr('class'),
-                            JSON.stringify(item));
-
-                // Add a new item.
-                view.addItem(item);
+                    });
+                });
             }
+            else if (types.indexOf('text/x-moz-place') >= 0)
+            {
+                // Bookmark entry {title, url} (could also use 'text/html')
+                var data        = JSON.parse(
+                                    dataTransfer.getData('text/x-moz-place')),
+                    url         = data.uri,
+                    title       = data.title,
+                    selector    = '';
+
+                items.push({
+                    timestamp:  (new Date()).getTime(),
+                    content:    '<a href="'+ url +'">'+ title +'</a>',
+                    url:        url,
+                    selector:   selector,
+                    topicId:    self.options.model.id,
+                    order:      '',
+                    comments:   []
+                });
+            }
+            else if ((types.indexOf('text/x-moz-url') >= 0) &&
+                     (types.indexOf('text/_moz_htmlcontext') < 0))
+            {
+                /* URL from address bar
+                 *  use 'text/x-moz-url', splitting the URL from the title
+                 */
+                var data        = dataTransfer.getData('text/x-moz-url'),
+                    parts       = data.split("\n"),
+                    url         = parts[0],
+                    title       = parts[1],
+                    selector    = '';
+
+                items.push({
+                    timestamp:  (new Date()).getTime(),
+                    content:    '<a href="'+ url +'">'+ title +'</a>',
+                    url:        url,
+                    selector:   selector,
+                    topicId:    self.options.model.id,
+                    order:      '',
+                    comments:   []
+                });
+            }
+            else if (types.indexOf('text/html') >= 0)
+            {
+                /* Use the dropped HTML
+                 *
+                 *  :TODO: Grab the page URL (via tabs)
+                 *         and generate the page selector.
+                 */
+                var data        = dataTransfer.getData('text/html'),
+                    url         = 'url://of.source/page',
+                    selector    = '#content > .selector';
+
+                items.push({
+                    timestamp:  (new Date()).getTime(),
+                    content:    data,
+                    url:        url,
+                    selector:   selector,
+                    topicId:    self.options.model.id,
+                    order:      '',
+                    comments:   []
+                });
+            }
+            // else, IGNORE (by NOT adding anyting to items)
+
+            // Create new item(s) add them to the item list.
+            var $after  = ($tgt.hasClass('curation-item')
+                            ? $tgt
+                            : self.$items.children().last());
+            _.each(items, function(item) {
+                var view    = new ItemView({model:item});
+                view.$el.insertAfter( $after );
+
+                $after = view.$el;
+            });
+
+            $src = null;
+
+            /*
+            var item    = {
+                    timestamp:  (new Date()).getTime(),
+                    content:    dataTransfer.getData('text/html'),
+                    url:        'url://of.source/page',
+                    selector:   '.inter-page > .selector',
+                    topicId:    self.options.model.id,
+                    order:      '',
+                    comments:   []
+                },
+                view    = new ItemView({model:item});
+
+            $src = view.$el;
+            // */
         }
-        else
+
+        if ($src && ($tgt.get(0) !== $src.get(0)))
         {
-            if ($tgt.hasClass('curation-page'))
+            if ($tgt.hasClass('curation-item'))
             {
                 $src.insertAfter( $tgt );
             }
             else
             {
-                self.$pages.append( $src );
+                self.$items.append( $src );
             }
         }
 
@@ -597,305 +662,6 @@ var TopicView   = Backbone.View.extend({
          * NOT be triggerd on the target element.
          */
         $('.drag-over').removeClass('drag-over');
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-    }
-});
-
-/** @brief  A Backbone View for a single Page
- */
-var PageView    = Backbone.View.extend({
-    tagName:    'li',
-    className:  'curation-page',
-
-    events:     {
-        'click .toggle':                'toggle',
-
-        'render':                       'render',
-
-        // Drag-and-drop
-        'dragover':                     'dragOver',
-        'dragenter':                    'dragEnter',
-        'dragleave':                    'dragLeave',
-
-        'drop':                         'dragDrop'
-    },
-
-    template:   '#curation-page',
-
-    /** @brief  Initialize a new instances.
-     */
-    initialize: function() {
-        var self    = this;
-
-        if (_.isString( self.template ))
-        {
-            // Resolve our template
-            var html    = $(self.template).html();
-            try {
-                //PageView.prototype.template = _.template( html );
-                self.__proto__.template = _.template( html );
-            } catch(e) {
-                console.log("Template error:", e.message,
-                            ", html[", html, "]");
-            }
-        }
-
-        self.$el.data('PageView', self);
-
-        if (self.options.model)
-        {
-            // Trigger an initial rendering
-            self.render();
-        }
-    },
-
-    /** @brief  Set a new model and trigger a (re)render.
-     *  @param  model   A Page model of the form:
-     *                      {url:       url,
-     *                       title:     title,
-     *                       timestamp: timestamp,
-     *                       content:   content,
-     *                       items:     []}
-     */
-    setModel: function(model) {
-        var self    = this;
-
-        self.options.model = model;
-
-        self.render();
-
-        return self;
-    },
-
-    /** @brief  Add a new item to this Page entry.
-     *  @param  item    An Item model of the form:
-     */
-    addItem: function(item) {
-        var self    = this,
-            page    = self.options.model;
-        if (! page) { return; }
-
-        page.items.push(item);
-
-        // Create a new ItemView and append it to the list of page items
-        var view    = new ItemView({model: item});
-        self.$items.append( view.$el );
-
-        if (page.items.length > 0)
-        {
-            self.$el.addClass('collapsable');
-        }
-
-        return self;
-    },
-
-    /** @brief  Render this page.
-     */
-    render: function() {
-        var self    = this,
-            page    = self.options.model;
-        if (! page) { return; }
-
-        var $page   = $( self.template(page) );
-
-        self.$el.attr('draggable', true);
-        self.$el.empty();
-        self.$el.append( $page );
-
-        self.$toggle = self.$el.find('> header .toggle');
-        self.$items  = self.$el.find('> .curation-items');
-
-        self.$items.empty();
-
-        /* Create each item individually so we can attach data to
-         * each.
-         */
-        page.items.forEach(function(item) {
-            var view    = new ItemView({model: item});
-            
-            self.$items.append( view.$el );
-        });
-
-        if (page.items.length > 0)
-        {
-            self.$el.addClass('collapsable');
-        }
-
-        return self;
-    },
-
-    /************************************************************************
-     * Event handlers
-     *
-     */
-
-    /** @brief  Toggle this topic opened/closed.
-     */
-    toggle: function(e) {
-        var self    = this;
-
-        if (_.isEmpty(self.$toggle))  { return; }
-
-        console.log("PageView::toggle()");
-
-        var title   = self.$toggle.attr('title');
-
-        if (e)
-        {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        if (self.$el.hasClass('collapsed'))
-        {
-            self.$el.removeClass('collapsed');
-            self.$items.slideDown(function() {
-                self.$toggle.attr('title', title.replace('expand', 'collapse'));
-            });
-        }
-        else
-        {
-            self.$items.slideUp(function() {
-                self.$el.addClass('collapsed');
-                self.$toggle.attr('title', title.replace('collapse', 'expand'));
-            });
-        }
-
-        return self;
-    },
-
-    /**********************
-     * Drag-and-drop
-     *
-     */
-    canDrop: function($src) {
-        var self    = this;
-
-        return ($src &&
-                ($src.hasClass('curation-item') &&
-                 ($src.closest('.curation-page').get(0) === self.$el.get(0))) );
-    },
-    dragOver: function(e) {
-        var self            = this,
-            dataTransfer    = (e.dataTransfer
-                                ? e.dataTransfer
-                                : e.originalEvent.dataTransfer),
-            $src            = gDragging,
-            canDrop         = (dataTransfer && self.canDrop($src));
-
-        if (! canDrop)  { return; }
-
-        dataTransfer.dropEffect = 'move';
-        e.preventDefault();
-    },
-    dragEnter: function(e) {
-        var self        = this,
-            $src        = gDragging,
-            $tgt        = $(e.target).closest('.curation-page,.curation-item'),
-            dragCount   = ($tgt.data('drag-count') || 0);
-
-        if ($src)
-        {
-            if (! self.canDrop($src))
-            {
-                // Propagate this event up to our parent
-                return;
-            }
-
-            // /*
-            var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-            console.log("PageView::dragEnter: src[ %s-%d.%s ]",
-                        $src.prop('tagName'),
-                        $srcTags.index($src),
-                        $src.attr('class'));
-            // */
-        }
-        else
-        {
-            console.log("PageView::dragEnter: EXTERNAL item: %s.%s",
-                        $tgt.prop('tagName'), $tgt.attr('class'));
-        }
-
-        $('.drag-over').removeClass('drag-over');
-        $tgt.addClass('drag-over');
-        $tgt.data('drag-count', dragCount+1);
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-    },
-    dragLeave: function(e) {
-        var self        = this,
-            $src        = gDragging,
-            $tgt        = $(e.target).closest('.curation-page,.curation-item'),
-            dragCount   = ($tgt.data('drag-count') || 1) - 1;
-
-        if ((dragCount < 1) && self.canDrop($src))
-        {
-            // /*
-            if ($src)
-            {
-                var $srcTags   = $src.parent()
-                                        .find( '> '+ $src.prop('tagName') );
-                console.log("PageView::dragLeave: src[ %s-%d.%s ]: %d",
-                            $src.prop('tagName'),
-                            $srcTags.index($src),
-                            $src.attr('class'),
-                            dragCount);
-            }
-            // */
-
-            $tgt.removeClass('drag-over');
-        }
-
-        $tgt.data('drag-count', (dragCount > 0 ? dragCount : 0));
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-    },
-
-    dragDrop: function(e) {
-        var self            = this,
-            dataTransfer    = (e.dataTransfer
-                                ? e.dataTransfer
-                                : e.originalEvent.dataTransfer);
-        if (! dataTransfer) { return; }
-
-        if (! self.canDrop( gDragging ))    { return; }
-
-        var $src    = (gDragging || $(dataTransfer.mozSourceNode));
-        if (! $src) { return; }
-
-        // /*
-        var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-        console.log("PageView::dragDrop: src[ %s-%d.%s ]",
-                    $src.prop('tagName'),
-                    $srcTags.index($src),
-                    $src.attr('class'));
-        // */
-
-        var $tgt    = $(e.target).closest('.curation-page,.curation-item');
-        if ($tgt.hasClass('curation-item'))
-        {
-            $src.insertAfter( $tgt );
-        }
-        else
-        {
-            self.$items.append( $src );
-        }
-
-        /* Directly remove the 'drag-over' class on $tgt since 'dragleave' will
-         * NOT be triggerd on the target element.
-         */
-        $('.drag-over').removeClass('drag-over');
-        self.dragCount = 0;
 
         e.preventDefault();
         e.stopPropagation();
@@ -943,10 +709,14 @@ var ItemView    = Backbone.View.extend({
 
     /** @brief  Set a new model and trigger a (re)render.
      *  @param  model   An Item model of the form:
-     *                      {location:  inter-page selector,
+     *                      {id:        uid,
      *                       timestamp: timestamp,
      *                       content:   content,
-     *                       items:     []}
+     *                       url:       source-page url,
+     *                       selector:  inter-page selector,
+     *                       topicId:   id of containing topic,
+     *                       order:     sort order,
+     *                       comments:  []}
      */
     setModel: function(model) {
         var self    = this;
