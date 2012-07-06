@@ -9,33 +9,34 @@
                                          media='all' />
  </head>
  <body>
-  <div id='curation'>
-   <input type='text' id='curation-topic-add' placeholder='New Topic' />
-   <ul id='curation-topics'></ul>
+  <div id='collaborative-curation'>
+   <div class='curation-input'>
+    <input class='new-topic' type='text' placeholder='New Topic' />
+   </div>
+   <ul    class='curation-topics'></ul>
   </div>
  </body>
 
  <script id='curation-topic' type='text/template'>
-  <li class="curation-topic" draggable="true"
-                             droppable="curation-topic curation-item">
-   <div class="toggle" title="collapse topic">&nbsp;</div>
-   <h1><%= topic %></h1>
-   <ul class="curation-items"><% _.each(items, function(item) { %>
-    <li class="curation-item" draggable="true"
-                              droppable="curation-item">
-     <header>
-      <div class="curation-comments"><%= (_.isArray(item.comments) ? item.comments.length : item.comments) %></div>
-      <h1><a href="<%= item.url %>" class="url"><%= item.title %></a></h1>
-      <time datetime="<%= item.timestamp %>">
-       <span class="date"><%= ts2dateStr(item.timestamp) %></span>
-       <span class="time"><%= ts2timeStr(item.timestamp) %></span>
-      </time>
-     </header>
-     <div class="curation-content">
-      <%= item.content %>
-     </div>
-    </li><% }); %>
+   <header>
+    <div class="toggle" title="collapse topic">&nbsp;</div>
+    <h1><%= title %></h1>
+   </header>
+   <ul class="curation-items">
+     <!-- curation-item entries -->
    </ul>
-  </li>
+ </script>
+
+ <script id='curation-item' type='text/template'>
+     <div class="curation-comments"><%= (_.isArray(comments) ? comments.length : comments) %></div>
+     <time datetime="<%= timestamp %>">
+      <span class="date"><%= ts2dateStr(timestamp) %></span>
+      <span class="time"><%= ts2timeStr(timestamp) %></span>
+     </time>
+     <div class="curation-content">
+      <%= content %>
+     </div>
+     <a class="curation-location" href="<%= url %>"
+	 							  data-selector="<%= selector %>">&nbsp;</a>
  </script>
 </html>

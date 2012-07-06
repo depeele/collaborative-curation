@@ -15,8 +15,10 @@ body {
  </head>
  <body>
   <div id='collaborative-curation'>
-   <input type='text' class='new-topic' placeholder='New Topic' />
-   <ul class='curation-topics'></ul>
+   <div class='curation-input'>
+    <input class='new-topic' type='text' placeholder='New Topic' />
+   </div>
+   <ul    class='curation-topics'></ul>
   </div>
 
   <h3>Additional, "External" drag sources</h3>
@@ -47,7 +49,7 @@ body {
       <%= content %>
      </div>
      <a class="curation-location" href="<%= url %>"
-	 							  data-selector="<%= selector %>">&nbsp;</a>
+                                  data-selector="<%= selector %>">&nbsp;</a>
  </script>
 
  <script src='data/js/jquery.min.js'></script>
@@ -60,86 +62,86 @@ $(document).ready(function() {
 var msg     = {
         "topics":   [
             {"id":"topic-1",
-			 "order":0,
-			 "title":"Development",
+             "order":0,
+             "title":"Development",
              "items":   [
                 {"id":"item-1",
                  "timestamp":1341225011904,
-				 "content":"<a href='https://developer.mozilla.org/en-US/'>Mozilla Developer</a>",
-				 "url":"https://developer.mozilla.org/en-US/",
-				 "selector":"",
-				 "topicId":"topic-1",
-				 "order":0,
+                 "content":"<a href='https://developer.mozilla.org/en-US/'>Mozilla Developer</a>",
+                 "url":"https://developer.mozilla.org/en-US/",
+                 "selector":"",
+                 "topicId":"topic-1",
+                 "order":0,
                  "comments":[]},
                 {"id":"item-2",
                  "timestamp":1341225011904,
-				 "content":"<a href='https://developer.mozilla.org/en/JavaScript/Reference'>Javascript</a>",
-				 "url":"https://developer.mozilla.org/en/JavaScript/Reference",
-				 "selector":"",
-				 "topicId":"topic-1",
-				 "order":1,
+                 "content":"<a href='https://developer.mozilla.org/en/JavaScript/Reference'>Javascript</a>",
+                 "url":"https://developer.mozilla.org/en/JavaScript/Reference",
+                 "selector":"",
+                 "topicId":"topic-1",
+                 "order":1,
                  "comments":[]},
                 {"id":"item-3",
                  "timestamp":1341226022904,
                  "content":"Other object in the global scope are either created by the user script or provided by the host application",
-				 "url":"https://developer.mozilla.org/en/JavaScript/Reference",
-				 "selector":"#section_2 > p:first",
-				 "topicId":"topic-1",
-				 "order":2,
+                 "url":"https://developer.mozilla.org/en/JavaScript/Reference",
+                 "selector":"#section_2 > p:first",
+                 "topicId":"topic-1",
+                 "order":2,
                  "comments":[]},
                 {"id":"item-4",
                  "timestamp":1341228022904,
                  "content":"Operator precedence defines the order in which operators are evaluated.",
-				 "url":"https://developer.mozilla.org/en/JavaScript/Reference",
-				 "selector":"#section_5 > dl > dd.8",
-				 "topicId":"topic-1",
-				 "order":3,
+                 "url":"https://developer.mozilla.org/en/JavaScript/Reference",
+                 "selector":"#section_5 > dl > dd.8",
+                 "topicId":"topic-1",
+                 "order":3,
                  "comments":[]},
                 {"id":"item-5",
                  "timestamp":1341225011904,
-				 "content":"<a href='http://api.jquery.com/'>jQuery</a>",
-				 "url":"http://api.jquery.com/",
-				 "selector":"",
-				 "topicId":"topic-1",
-				 "order":4,
+                 "content":"<a href='http://api.jquery.com/'>jQuery</a>",
+                 "url":"http://api.jquery.com/",
+                 "selector":"",
+                 "topicId":"topic-1",
+                 "order":4,
                  "comments":[]},
                 {"id":"item-6",
                  "timestamp":1341225011904,
-				 "content":"<a href='http://documentcloud.github.com/backbone/#'>Backbone</a>",
+                 "content":"<a href='http://documentcloud.github.com/backbone/#'>Backbone</a>",
                  "url":"http://documentcloud.github.com/backbone/#",
-				 "selector":"",
-				 "topicId":"topic-1",
-				 "order":5,
+                 "selector":"",
+                 "topicId":"topic-1",
+                 "order":5,
                  "comments":[]},
                 {"id":"item-7",
                  "timestamp":1341225011904,
-				 "content":"<a href='http://documentcloud.github.com/underscore/#'>Underscore</a>",
+                 "content":"<a href='http://documentcloud.github.com/underscore/#'>Underscore</a>",
                  "url":"http://documentcloud.github.com/underscore/#",
-				 "selector":"",
-				 "topicId":"topic-1",
-				 "order":6,
+                 "selector":"",
+                 "topicId":"topic-1",
+                 "order":6,
                  "comments":[]},
                 {"id":"item-8",
                  "timestamp":1341225011904,
-				 "content":"<a href='http://nodejs.org/api/'>node.js</a>",
+                 "content":"<a href='http://nodejs.org/api/'>node.js</a>",
                  "url":"http://nodejs.org/api/",
-				 "selector":"",
-				 "topicId":"topic-1",
-				 "order":7,
+                 "selector":"",
+                 "topicId":"topic-1",
+                 "order":7,
                  "comments":[]}
              ]
             },
             {"id":"topic-2",
-			 "order":1,
-			 "title":"Misc",
+             "order":1,
+             "title":"Misc",
              "items":   [
                 {"id":"item-9",
                  "timestamp":1341225011904,
-				 "content":"<a href='https://google.com/'>google</a>",
+                 "content":"<a href='https://google.com/'>google</a>",
                  "url":"https://google.com/",
-				 "selector":"",
-				 "topicId":"topic-2",
-				 "order":0,
+                 "selector":"",
+                 "topicId":"topic-2",
+                 "order":0,
                  "comments":[]}
              ]
             },

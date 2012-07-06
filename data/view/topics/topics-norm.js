@@ -1,5 +1,6 @@
-var $           = window.$ || unsafeWindow.$,
-    proxy       = self;
+var root        = window || unsafeWindow,
+    $           = root.$,
+    proxy       = null;
     mainView    = null;
 
 // Ensure that Backbone has a proper reference to jQuery
@@ -40,6 +41,116 @@ function ts2dateStr(ts)
     return dateStr;
 }
 /* Date formatting utilities }
+ ****************************************************************************
+ * Logging {
+ *
+ */
+
+/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
+ *          return the resulting string.
+ *  @param  fmt     The printf format string;
+ *  @param  args    Following arguments to fulfill 'fmt';
+ *
+ *  @return The generated string.
+ */
+function sprintf(fmt, args)
+{
+    var str = '';
+    if (! _.isArray(args))
+    {
+        args = Array.prototype.slice.call(arguments).slice(1);
+    }
+
+    /********************************************
+     * Process the provided 'fmt' and 'args'
+     *  %s  = string
+     *  %d  = integer (decimal)
+     *  %x  = integer (hexadecimal, 0x)
+     *  %o  = integer (octal,       0)
+     *  %f  = floating point
+     *  %g  = floating point
+     *  %j  = JSON
+     */
+    var matches = fmt.match(/(\%[sdxofgj])/g),
+        pos     = 0;
+
+    if (matches && (matches.length > 0))
+    {
+        for (var idex = 0, len = Math.min(matches.length, args.length);
+                idex < len;
+                    ++idex)
+        {
+            var match       = matches[idex],
+                arg         = args[idex],
+                posMatch    = fmt.indexOf(match, pos);
+            if (posMatch > pos)
+            {
+                str += fmt.slice(pos, posMatch);
+                pos  = posMatch;
+            }
+
+            var formatted   = '?';
+            try {
+                switch (match[1])
+                {
+                // String
+                case 's':
+                    formatted = arg;
+                    break;
+
+                // Integer
+                case 'd':
+                    formatted = parseInt(arg, 10);
+                    break;
+
+                case 'x':
+                    formatted = parseInt(arg, 16);
+                    break;
+
+                case 'o':
+                    formatted = parseInt(arg, 8);
+                    break;
+
+                // Floating point
+                case 'f':
+                case 'g':
+                    formatted = parseFloat(arg);
+                    break;
+
+                // JSON
+                case 'j':
+                    formatted = JSON.stringify(arg);
+                    break;
+                }
+            } catch(e) {
+                formatted = "**Format Error: "+ e.message;
+            }
+
+            str += (formatted ? formatted.toString() : '');
+            pos += match.length;
+        }
+    }
+
+    if (pos < fmt.length)
+    {
+        str += fmt.slice(pos);
+    }
+
+    return str;
+}
+
+/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
+ *          write the result to the console.
+ *  @param  fmt     The printf format string;
+ *  @param  args    Following arguments to fulfill 'fmt';
+ */
+function log(fmt, args)
+{
+    args = Array.prototype.slice.call(arguments);
+
+    console.log( sprintf.apply(root, args) );
+}
+/* Logging }
  ****************************************************************************/
 
 /** @brief  The item currently being dragged (if initiated by our view). */
@@ -52,8 +163,6 @@ var TopicsView  = Backbone.View.extend({
         'keydown input.new-topic':      'topicAddKey',
 
         'click a':                      'openInTab',
-        'click .toggle':                'toggleItem',
-        'click .curation-topic > h1':   'toggleItem',
 
         'render':                       'render',
 
@@ -68,7 +177,7 @@ var TopicsView  = Backbone.View.extend({
         var self    = this;
 
         // Cache element references
-        self.$topicInput = self.$el.find('> input');
+        self.$topicInput = self.$el.find('.new-topic');
         self.$topics     = self.$el.find('.curation-topics');
 
         if (self.options.model)
@@ -157,46 +266,21 @@ var TopicsView  = Backbone.View.extend({
         e.preventDefault();
         e.stopPropagation();
 
-        console.log("TopicsView::openInTab(): %s", $a.attr('href'));
+        log("TopicsView::openInTab(): %s, %sshift, %sctrl, %salt, %smeta",
+                $a.attr('href'),
+                (e.shiftKey ? ' ' : '!'),
+                (e.altKey   ? ' ' : '!'),
+                (e.ctrlKey  ? ' ' : '!'),
+                (e.metaKey  ? ' ' : '!'));
 
-        /* Post that we're ready
-        proxy.postMessage({
-            name:   'sidebar',
-            action: 'visit',
-            url:    $a.attr('href')
-        });
-        // */
-    },
-
-    toggleItem: function(e) {
-        var self    = this,
-            $toggle = $(e.target),
-            $li     = $toggle.parents('li:first');
-
-        if ($toggle.prop('tagName') == 'H1')
+        // Post that we're ready
+        if (proxy)
         {
-            $toggle = $li.find('.toggle');
-        }
-
-        console.log("TopicsView::toggleItem()");
-
-        var title   = $toggle.attr('title');
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        if ($li.hasClass('collapsed'))
-        {
-            $li.removeClass('collapsed');
-            $li.find('> ul').slideDown(function() {
-                $toggle.attr('title', title.replace('expand', 'collapse'));
-            });
-        }
-        else
-        {
-            $li.find('> ul').slideUp(function() {
-                $li.addClass('collapsed');
-                $toggle.attr('title', title.replace('collapse', 'expand'));
+            proxy.postMessage({
+                name:   'sidebar',
+                action: 'visit',
+                url:    $a.attr('href'),
+                current:(! e.metaKey)
             });
         }
     },
@@ -222,7 +306,7 @@ var TopicsView  = Backbone.View.extend({
 
         /*
         var $tags   = $src.parent().find( $src.prop('tagName') );
-        console.log("drag start: src[ %s-%d.%s ]",
+        log("drag start: src[ %s-%d.%s ]",
                     $src.prop('tagName'),
                     $tags.index($src),
                     $src.attr('class'));
@@ -241,7 +325,7 @@ var TopicsView  = Backbone.View.extend({
 
         /*
         var $tags   = $src.parent().find( $src.prop('tagName') );
-        console.log("drag end: src[ %s-%d.%s ]",
+        log("drag end: src[ %s-%d.%s ]",
                     $src.prop('tagName'),
                     $tags.index($src),
                     $src.attr('class'));
@@ -266,6 +350,7 @@ var TopicView   = Backbone.View.extend({
 
     events:     {
         'click .toggle':                'toggle',
+        'click header > h1':            'toggle',
 
         'render':                       'render',
 
@@ -292,8 +377,7 @@ var TopicView   = Backbone.View.extend({
                 //TopicView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
-                console.log("Template error:", e.message,
-                            ", html[", html, "]");
+                log("Template error: %s, html[ %s ]", e.message, html);
             }
         }
 
@@ -363,7 +447,7 @@ var TopicView   = Backbone.View.extend({
 
         if (_.isEmpty(self.$toggle))  { return; }
 
-        console.log("TopicView::toggle()");
+        log("TopicView::toggle()");
 
         var title   = self.$toggle.attr('title');
 
@@ -433,7 +517,7 @@ var TopicView   = Backbone.View.extend({
 
             /*
             var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-            console.log("TopicView::dragEnter: src[ %s-%d.%s ]: %d",
+            log("TopicView::dragEnter: src[ %s-%d.%s ]: %d",
                         $src.prop('tagName'),
                         $srcTags.index($src),
                         $src.attr('class'),
@@ -443,7 +527,7 @@ var TopicView   = Backbone.View.extend({
         /*
         else
         {
-            console.log("TopicView::dragEnter: EXTERNAL item: %s.%s: %d",
+            log("TopicView::dragEnter: EXTERNAL item: %s.%s: %d",
                         $tgt.prop('tagName'), $tgt.attr('class'), dragCount);
         }
         // */
@@ -474,7 +558,7 @@ var TopicView   = Backbone.View.extend({
             {
                 var $srcTags   = $src.parent()
                                         .find( '> '+ $src.prop('tagName') );
-                console.log("TopicView::dragLeave: src[ %s-%d.%s ]: %d",
+                log("TopicView::dragLeave: src[ %s-%d.%s ]: %d",
                             $src.prop('tagName'),
                             $srcTags.index($src),
                             $src.attr('class'),
@@ -508,7 +592,7 @@ var TopicView   = Backbone.View.extend({
 
         // /*
         var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-        console.log("TopicView::dragDrop: src[ %s-%d.%s ]",
+        log("TopicView::dragDrop: src[ %s-%d.%s ]",
                     $src.prop('tagName'),
                     $srcTags.index($src),
                     $src.attr('class'));
@@ -538,9 +622,9 @@ var TopicView   = Backbone.View.extend({
              *  - 'text/plain'
              *      dropping plain-text -- ignore??;
              */
-            console.log("TopicView::dragDrop: dataTransfer types:");
+            log("TopicView::dragDrop: dataTransfer types:");
             _.each(dataTransfer.types, function(type) {
-                console.log("TopicView::dragDrop:   %s: %s",
+                log("TopicView::dragDrop:   %s: %s",
                             type, dataTransfer.getData(type));
             });
 
@@ -695,8 +779,7 @@ var ItemView    = Backbone.View.extend({
                 //ItemView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
-                console.log("Template error:", e.message,
-                            ", html[", html, "]");
+                log("Template error: %s, html[ %s ]", e.message, html);
             }
         }
 
@@ -747,31 +830,33 @@ var ItemView    = Backbone.View.extend({
      */
 });
 
+if (proxy)
+{
+    /** @brief  Handle a postMessage()
+     *  @param  msg     The message data:
+     *                      {action: *action*, action-secific-data}
+     *                          Valid actions:
+     *                              'load', topics:[]
+     */
+    proxy.on('message', function(msg) {
 
-/** @brief  Handle a postMessage()
- *  @param  msg     The message data:
- *                      {action: *action*, action-secific-data}
- *                          Valid actions:
- *                              'load', topics:[]
-proxy.on('message', function(msg) {
+        log("js/topics-sidebar.js: message %j", msg);
 
-    console.log("js/topics-sidebar.js: message ", JSON.stringify(msg));
-
-    switch (msg.action)
-    {
-    case 'load':
-
-        if (mainView)
+        switch (msg.action)
         {
-            mainView.render(msg.topics);
+        case 'load':
+
+            if (mainView)
+            {
+                mainView.render(msg.topics);
+            }
+            break;
         }
-        break;
-    }
-});
- */
+    });
+}
 
 $(document).ready(function() {
-    //console.log("js/topics-sidebar.js: Document Ready.");
+    //log("js/topics-sidebar.js: Document Ready.");
 
     // Establish our mainView
     var $curation   = $('#collaborative-curation');
@@ -779,17 +864,21 @@ $(document).ready(function() {
     mainView = new TopicsView({el: $curation});
     $curation.data('view', mainView);
 
-    /* Post that we're ready
-    proxy.postMessage({
-        name:   'sidebar',
-        action: 'loaded',
-        url:    'js/topics-sidebar.js'
-    });
-    // */
-
-    $curation.on('load', function(e, msg) {
-        mainView.setModel( msg.topics );
-    });
+    // Post that we're ready
+    if (proxy)
+    {
+        proxy.postMessage({
+            name:   'sidebar',
+            action: 'loaded',
+            url:    'js/topics-sidebar.js'
+        });
+    }
+    else
+    {
+        $curation.on('load', function(e, msg) {
+            mainView.setModel( msg.topics );
+        });
+    }
 });
 
-//console.log("js/topics-sidebar.js loaded");
+//log("js/topics-sidebar.js loaded");
