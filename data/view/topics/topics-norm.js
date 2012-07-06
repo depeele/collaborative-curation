@@ -135,8 +135,8 @@ var TopicsView  = Backbone.View.extend({
         {
             // Add a new topic
             var topic   = {
-                    topic:  val,
-                    pages:  []
+                    title:  val,
+                    items:  []
                 },
                 view    = new TopicView({model: topic});
 
@@ -398,7 +398,8 @@ var TopicView   = Backbone.View.extend({
      *
      */
     canDrop: function($src) {
-        return ((! $src) || ($src.hasClass('curation-item')));
+        return ((! $src) || $src.hasClass('curation-item')
+                         || $src.hasClass('curation-topic'));
     },
     dragOver: function(e) {
         var self            = this,
@@ -416,7 +417,10 @@ var TopicView   = Backbone.View.extend({
     dragEnter: function(e) {
         var self        = this,
             $src        = gDragging,
-            $tgt        = $(e.target).closest('.curation-topic,.curation-item'),
+            $tgt        = $(e.target).closest(
+                            (! $src || $src.hasClass('curation-item')
+                                ? '.curation-item,.curation-topic'
+                                : '.curation-topic')),
             dragCount   = ($tgt.data('drag-count') || 0) + 1;
 
         if ($src)
@@ -444,7 +448,8 @@ var TopicView   = Backbone.View.extend({
         }
         // */
 
-        $('.drag-over').removeClass('drag-over');
+        $('.drag-over').removeClass('drag-over')
+                       .removeData('drag-count');
         $tgt.addClass('drag-over');
         $tgt.data('drag-count', dragCount);
 
@@ -456,7 +461,10 @@ var TopicView   = Backbone.View.extend({
     dragLeave: function(e) {
         var self        = this,
             $src        = gDragging,
-            $tgt        = $(e.target).closest('.curation-topic,.curation-item'),
+            $tgt        = $(e.target).closest(
+                            (! $src || $src.hasClass('curation-item')
+                                ? '.curation-item,.curation-topic'
+                                : '.curation-topic')),
             dragCount   = ($tgt.data('drag-count') || 1) - 1;
 
         if (dragCount < 1)
@@ -474,7 +482,8 @@ var TopicView   = Backbone.View.extend({
             }
             // */
 
-            $tgt.removeClass('drag-over');
+            $tgt.removeClass('drag-over')
+                .removeData('drag-count');
         }
 
         $tgt.data('drag-count', (dragCount > 0 ? dragCount : 0));
@@ -505,7 +514,10 @@ var TopicView   = Backbone.View.extend({
                     $src.attr('class'));
         // */
 
-        var $tgt    = $(e.target).closest('.curation-item,.curation-topic');
+        var $tgt    = $(e.target).closest(
+                        (! gDragging || gDragging.hasClass('curation-item')
+                            ? '.curation-item,.curation-topic'
+                            : '.curation-topic'));
         if (! gDragging)
         {
             /* Dropping an "External" item.
@@ -579,20 +591,24 @@ var TopicView   = Backbone.View.extend({
                  *  use 'text/x-moz-url', splitting the URL from the title
                  */
                 var data        = dataTransfer.getData('text/x-moz-url'),
-                    parts       = data.split("\n"),
-                    url         = parts[0],
-                    title       = parts[1],
-                    selector    = '';
+                    parts       = data.split("\n");
 
-                items.push({
-                    timestamp:  (new Date()).getTime(),
-                    content:    '<a href="'+ url +'">'+ title +'</a>',
-                    url:        url,
-                    selector:   selector,
-                    topicId:    self.options.model.id,
-                    order:      '',
-                    comments:   []
-                });
+                for (var idex = 0, len = parts.length; idex < len; idex += 2)
+                {
+                    var url         = parts[idex],
+                        title       = parts[idex+1],
+                        selector    = '';
+
+                    items.push({
+                        timestamp:  (new Date()).getTime(),
+                        content:    '<a href="'+ url +'">'+ title +'</a>',
+                        url:        url,
+                        selector:   selector,
+                        topicId:    self.options.model.id,
+                        order:      '',
+                        comments:   []
+                    });
+                }
             }
             else if (types.indexOf('text/html') >= 0)
             {
@@ -627,28 +643,11 @@ var TopicView   = Backbone.View.extend({
 
                 $after = view.$el;
             });
-
-            $src = null;
-
-            /*
-            var item    = {
-                    timestamp:  (new Date()).getTime(),
-                    content:    dataTransfer.getData('text/html'),
-                    url:        'url://of.source/page',
-                    selector:   '.inter-page > .selector',
-                    topicId:    self.options.model.id,
-                    order:      '',
-                    comments:   []
-                },
-                view    = new ItemView({model:item});
-
-            $src = view.$el;
-            // */
         }
-
-        if ($src && ($tgt.get(0) !== $src.get(0)))
+        else if ($tgt.get(0) !== $src.get(0))
         {
-            if ($tgt.hasClass('curation-item'))
+            if ($tgt.hasClass('curation-item') ||
+                $src.hasClass('curation-topic'))
             {
                 $src.insertAfter( $tgt );
             }
@@ -661,7 +660,8 @@ var TopicView   = Backbone.View.extend({
         /* Directly remove the 'drag-over' class on $tgt since 'dragleave' will
          * NOT be triggerd on the target element.
          */
-        $('.drag-over').removeClass('drag-over');
+        $('.drag-over').removeClass('drag-over')
+                       .removeData('drag-count');
 
         e.preventDefault();
         e.stopPropagation();
