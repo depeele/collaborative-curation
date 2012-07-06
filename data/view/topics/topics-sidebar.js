@@ -151,6 +151,137 @@ function log(fmt, args)
     console.log( sprintf.apply(root, args) );
 }
 /* Logging }
+ ****************************************************************************
+ * drag-and-drop {
+ *
+ */
+
+/** @brief  Given a drag-and-drop dataTransfer object, generate a matching set
+ *          of items representing the raw item data.
+ *  @param  topic           The topic associated with this drop;
+ *  @param  dataTransfer    The dataTransfer object from a drag-and-drop Drop
+ *                          request;
+ *
+ *  @return An array of item objects;
+ */
+function dataTransfer2Items(topic, dataTransfer)
+{
+    /* Dropping an "External" item.
+     *
+     * Type-based Heuristic:
+     *  - 'application/x-moz-file' (or dataTransfer.files.length > 0)
+     *      dropping an external file from the system
+     *          use dataTransfer.files
+     *              {size, type, name, mozFullPath}
+     *  - 'text/x-moz-url' but no 'text/_moz_htmlcontext'
+     *      dropping a URL from the address bar
+     *          use 'text/x-moz-url', splitting the URL from the title
+     *  - 'text/x-moz-place'
+     *      dropping a bookmark entry {title, uri}
+     *          use 'text/html'
+     *  - 'text/html'
+     *      dropping pre-formated HTML -- use it directly;
+     *  - 'text/plain'
+     *      dropping plain-text -- ignore??;
+     */
+    log("dataTransfer2Items: types:");
+    _.each(dataTransfer.types, function(type) {
+        log("dataTransfer2Items:   %s: %s",
+                    type, dataTransfer.getData(type));
+    });
+
+    var types   = [].slice.call(dataTransfer.types, 0),
+        items   = [];
+    if (dataTransfer.files && (dataTransfer.files.length > 0))
+    {
+        // Create an entry for each file
+        _.each(dataTransfer.files, function(file) {
+            var url         = 'file://'+ file.mozFullPath,
+                title       = file.name,
+                selector    = '';
+
+            items.push({
+                timestamp:  (new Date()).getTime(),
+                content:    '<a href="'+ url +'">'+ title +'</a>',
+                url:        url,
+                selector:   selector,
+                topicId:    topic.id,
+                order:      '',
+                comments:   []
+            });
+        });
+    }
+    else if (types.indexOf('text/x-moz-place') >= 0)
+    {
+        // Bookmark entry {title, url} (could also use 'text/html')
+        var data        = JSON.parse(
+                            dataTransfer.getData('text/x-moz-place')),
+            url         = data.uri,
+            title       = data.title,
+            selector    = '';
+
+        items.push({
+            timestamp:  (new Date()).getTime(),
+            content:    '<a href="'+ url +'">'+ title +'</a>',
+            url:        url,
+            selector:   selector,
+            topicId:    topic.id,
+            order:      '',
+            comments:   []
+        });
+    }
+    else if ((types.indexOf('text/x-moz-url') >= 0) &&
+             (types.indexOf('text/_moz_htmlcontext') < 0))
+    {
+        /* URL from address bar
+         *  use 'text/x-moz-url', splitting the URL from the title
+         */
+        var data        = dataTransfer.getData('text/x-moz-url'),
+            parts       = data.split("\n");
+
+        for (var idex = 0, len = parts.length; idex < len; idex += 2)
+        {
+            var url         = parts[idex],
+                title       = parts[idex+1],
+                selector    = '';
+
+            items.push({
+                timestamp:  (new Date()).getTime(),
+                content:    '<a href="'+ url +'">'+ title +'</a>',
+                url:        url,
+                selector:   selector,
+                topicId:    topic.id,
+                order:      '',
+                comments:   []
+            });
+        }
+    }
+    else if (types.indexOf('text/html') >= 0)
+    {
+        /* Use the dropped HTML
+         *
+         *  :TODO: Grab the page URL (via tabs)
+         *         and generate the page selector.
+         */
+        var data        = dataTransfer.getData('text/html'),
+            url         = 'url://of.source/page',
+            selector    = '#content > .selector';
+
+        items.push({
+            timestamp:  (new Date()).getTime(),
+            content:    data,
+            url:        url,
+            selector:   selector,
+            topicId:    topic.id,
+            order:      '',
+            comments:   []
+        });
+    }
+    // else, IGNORE (by NOT adding anyting to items)
+
+    return items;
+}
+/* drag-and-drop }
  ****************************************************************************/
 
 /** @brief  The item currently being dragged (if initiated by our view). */
@@ -595,6 +726,8 @@ var TopicView   = Backbone.View.extend({
                             : '.curation-topic'));
         if (! gDragging)
         {
+            var items   = dataTransfer2Items(self.options.model, dataTransfer);
+
             /* Dropping an "External" item.
              *
              * Type-based Heuristic:
@@ -612,7 +745,6 @@ var TopicView   = Backbone.View.extend({
              *      dropping pre-formated HTML -- use it directly;
              *  - 'text/plain'
              *      dropping plain-text -- ignore??;
-             */
             log("TopicView::dragDrop: dataTransfer types:");
             _.each(dataTransfer.types, function(type) {
                 log("TopicView::dragDrop:   %s: %s",
@@ -662,9 +794,8 @@ var TopicView   = Backbone.View.extend({
             else if ((types.indexOf('text/x-moz-url') >= 0) &&
                      (types.indexOf('text/_moz_htmlcontext') < 0))
             {
-                /* URL from address bar
-                 *  use 'text/x-moz-url', splitting the URL from the title
-                 */
+                // URL from address bar
+                //  use 'text/x-moz-url', splitting the URL from the title
                 var data        = dataTransfer.getData('text/x-moz-url'),
                     parts       = data.split("\n");
 
@@ -687,11 +818,10 @@ var TopicView   = Backbone.View.extend({
             }
             else if (types.indexOf('text/html') >= 0)
             {
-                /* Use the dropped HTML
-                 *
-                 *  :TODO: Grab the page URL (via tabs)
-                 *         and generate the page selector.
-                 */
+                // Use the dropped HTML
+                //
+                //  :TODO: Grab the page URL (via tabs)
+                //         and generate the page selector.
                 var data        = dataTransfer.getData('text/html'),
                     url         = 'url://of.source/page',
                     selector    = '#content > .selector';
@@ -707,6 +837,7 @@ var TopicView   = Backbone.View.extend({
                 });
             }
             // else, IGNORE (by NOT adding anyting to items)
+            // */
 
             // Create new item(s) add them to the item list.
             var $after  = ($tgt.hasClass('curation-item')
