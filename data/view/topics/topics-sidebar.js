@@ -1,337 +1,9 @@
-var proxy       = addon,
-    mainView    = null;
-
-/*
-var root        = window || unsafeWindow,
-    $           = root.$,
-    proxy       = addon,
-    mainView    = null;
-
-// Ensure that Backbone has a proper reference to jQuery
-Backbone.setDomLibrary($);
-// */
-
-/****************************************************************************
- * Date Formatting utilities {
- *
- *  Called from the '#curation-topic' template applied in render().
- *  The template itself is defined in data/view/topics/index.html
- *
+/** @brief  The item currently being dragged
+ *              (if initiated by a view in *this* script).
  */
-function padNum(num, len)
-{
-    len = len || 2;
-    num = ''+ num;
-
-    return '00000000'.substr(0, len - num.length) + num;
-}
-function ts2timeStr(ts)
-{
-    var date        = new Date(ts),
-        hour        = date.getHours(),
-        meridian    = 'a';
-
-    if      (hour >   12)   { meridian = 'p'; hour -= 12; }
-    else if (hour === 12)   { meridian = 'p'; }
-
-    return hour +':'+ padNum(date.getMinutes()) + meridian;
-}
-function ts2dateStr(ts)
-{
-    var date    = new Date(ts),
-        dateStr = date.getFullYear()            +'.'
-                + padNum(date.getMonth() + 1)   +'.'
-                + padNum(date.getDate());
-
-    return dateStr;
-}
-/* Date formatting utilities }
- ****************************************************************************
- * Logging {
- *
- */
-
-/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
- *          return the resulting string.
- *  @param  fmt     The printf format string;
- *  @param  args    Following arguments to fulfill 'fmt';
- *
- *  @return The generated string.
- */
-function sprintf(fmt, args)
-{
-    var str = '';
-    if (! _.isArray(args))
-    {
-        args = Array.prototype.slice.call(arguments).slice(1);
-    }
-
-    /********************************************
-     * Process the provided 'fmt' and 'args'
-     *  %s  = string
-     *  %d  = integer (decimal)
-     *  %x  = integer (hexadecimal, 0x)
-     *  %o  = integer (octal,       0)
-     *  %f  = floating point
-     *  %g  = floating point
-     *  %j  = JSON
-     */
-    var matches = fmt.match(/(\%[sdxofgj])/g),
-        pos     = 0;
-
-    if (matches && (matches.length > 0))
-    {
-        for (var idex = 0, len = Math.min(matches.length, args.length);
-                idex < len;
-                    ++idex)
-        {
-            var match       = matches[idex],
-                arg         = args[idex],
-                posMatch    = fmt.indexOf(match, pos);
-            if (posMatch > pos)
-            {
-                str += fmt.slice(pos, posMatch);
-                pos  = posMatch;
-            }
-
-            var formatted   = '?';
-            try {
-                switch (match[1])
-                {
-                // String
-                case 's':
-                    formatted = arg;
-                    break;
-
-                // Integer
-                case 'd':
-                    formatted = parseInt(arg, 10);
-                    break;
-
-                case 'x':
-                    formatted = parseInt(arg, 16);
-                    break;
-
-                case 'o':
-                    formatted = parseInt(arg, 8);
-                    break;
-
-                // Floating point
-                case 'f':
-                case 'g':
-                    formatted = parseFloat(arg);
-                    break;
-
-                // JSON
-                case 'j':
-                    formatted = JSON.stringify(arg);
-                    break;
-                }
-            } catch(e) {
-                formatted = "**Format Error: "+ e.message;
-            }
-
-            str += (formatted ? formatted.toString() : '');
-            pos += match.length;
-        }
-    }
-
-    if (pos < fmt.length)
-    {
-        str += fmt.slice(pos);
-    }
-
-    return str;
-}
-
-/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
- *          write the result to the console.
- *  @param  fmt     The printf format string;
- *  @param  args    Following arguments to fulfill 'fmt';
- */
-function log(fmt, args)
-{
-    args = Array.slice(arguments);
-
-    var str = sprintf.apply(this, args);
-
-    proxy.postMessage({src:      'sidebar',
-                       action:   'console',
-                       str:      str});
-    //console.log( str );
-}
-/* Logging }
- ****************************************************************************
- * drag-and-drop {
- *
- */
-
-/** @brief  Given a drag-and-drop dataTransfer object, generate a matching set
- *          of items representing the raw item data.
- *  @param  topic           The topic associated with this drop;
- *  @param  dataTransfer    The dataTransfer object from a drag-and-drop Drop
- *                          request;
- *
- *  @return An array of item objects;
- */
-function dataTransfer2Items(topic, dataTransfer)
-{
-    /* Dropping an "External" item.
-     *
-     * Type-based Heuristic:
-     *  - 'application/x-moz-file' (or dataTransfer.files.length > 0)
-     *      dropping an external file from the system
-     *          use dataTransfer.files
-     *              {size, type, name, mozFullPath}
-     *  - 'text/x-moz-url' but no 'text/_moz_htmlcontext'
-     *      dropping a URL from the address bar
-     *          use 'text/x-moz-url', splitting the URL from the title
-     *  - 'text/x-moz-place'
-     *      dropping a bookmark entry {title, uri}
-     *          use 'text/html'
-     *  - 'text/html'
-     *      dropping pre-formated HTML -- use it directly;
-     *  - 'text/plain'
-     *      dropping plain-text -- ignore??;
-     */
-    log("dataTransfer2Items: types:");
-    _.each(dataTransfer.types, function(type) {
-        log("dataTransfer2Items:   %s: %s",
-                    type, dataTransfer.getData(type));
-    });
-
-    var items   = [];
-    if (dataTransfer.types.contains('application/x-moz-file'))
-    {
-        // Create an entry for each file
-        log("dataTransfer2Items:   %d: application/x-moz-file entries:",
-            dataTransfer.mozItemCount);
-
-        for (var idex = 0; idex < dataTransfer.mozItemCount; idex++)
-        {
-            var file;
-            try {
-                file = dataTransfer.mozGetDataAt('application/x-moz-file',
-                                                 idex);
-            } catch(e) {
-                file = e;
-            }
-
-            log("dataTransfer2Items:    %d: %j", idex, file);
-        }
-    }
-    else if (dataTransfer.files && (dataTransfer.files.length > 0))
-    {
-        // Create an entry for each file
-        log("dataTransfer2Items:   %d: file entries:",
-            dataTransfer.files.length);
-
-        _.each(dataTransfer.files, function(file, idex) {
-            var url         = 'file://'+ file.mozFullPath,
-                title       = file.name,
-                selector    = '';
-
-            log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
-                idex, url, title);
-
-            items.push({
-                timestamp:  (new Date()).getTime(),
-                content:    '<a href="'+ url +'">'+ title +'</a>',
-                url:        url,
-                selector:   selector,
-                topicId:    topic.id,
-                order:      '',
-                comments:   []
-            });
-        });
-    }
-    else if (dataTransfer.types.contains('text/x-moz-place'))
-    {
-        // Bookmark entry {title, url} (could also use 'text/html')
-        var data        = JSON.parse(
-                            dataTransfer.getData('text/x-moz-place')),
-            url         = data.uri,
-            title       = data.title,
-            selector    = '';
-
-        log("dataTransfer2Items:   text/x-moz-place: data[ %j ]", data);
-
-        items.push({
-            timestamp:  (new Date()).getTime(),
-            content:    '<a href="'+ url +'">'+ title +'</a>',
-            url:        url,
-            selector:   selector,
-            topicId:    topic.id,
-            order:      '',
-            comments:   []
-        });
-    }
-    else if ( dataTransfer.types.contains('text/x-moz-url') &&
-              (! dataTransfer.types.contains('text/_moz_htmlcontext')) )
-    {
-        /* URL from address bar
-         *  use 'text/x-moz-url', splitting the URL from the title
-         */
-        var data        = dataTransfer.getData('text/x-moz-url'),
-            parts       = data.split("\n");
-
-        log("dataTransfer2Items:   %d: text-x-moz-urls without _moz_htmlcontext",
-            parts.length);
-
-        for (var idex = 0, len = parts.length; idex < len; idex += 2)
-        {
-            var url         = parts[idex],
-                title       = parts[idex+1],
-                selector    = '';
-
-            log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
-                idex, url, title);
-
-            items.push({
-                timestamp:  (new Date()).getTime(),
-                content:    '<a href="'+ url +'">'+ title +'</a>',
-                url:        url,
-                selector:   selector,
-                topicId:    topic.id,
-                order:      '',
-                comments:   []
-            });
-        }
-    }
-    else if (dataTransfer.types.contains('text/html'))
-    {
-        /* Use the dropped HTML
-         *
-         *  :TODO: Grab the page URL (via tabs)
-         *         and generate the page selector.
-         */
-        var data        = dataTransfer.getData('text/html'),
-            url         = 'url://of.source/page',
-            selector    = '#content > .selector';
-
-        log("dataTransfer2Items:   text/html: data[ %s ]", data);
-
-        items.push({
-            timestamp:  (new Date()).getTime(),
-            content:    data,
-            url:        url,
-            selector:   selector,
-            topicId:    topic.id,
-            order:      '',
-            comments:   []
-        });
-    }
-    // else, IGNORE (by NOT adding anyting to items)
-
-    return items;
-}
-/* drag-and-drop }
- ****************************************************************************/
-
-/** @brief  The item currently being dragged (if initiated by our view). */
 var gDragging   = null;
 
-/** @brief  A Backbone View for Topics
+/** @brief  A Backbone View for a list of Topics.  This is the primary view.
  */
 var TopicsView  = Backbone.View.extend({
     events:     {
@@ -355,10 +27,60 @@ var TopicsView  = Backbone.View.extend({
         self.$topicInput = self.$el.find('.new-topic');
         self.$topics     = self.$el.find('.curation-topics');
 
+        // Listen for 'message' events from the addon.
+        addon.on('message', self.addonMessage.bind(self));
+
         if (self.options.model)
         {
-            // Trigger an initial rendering
+            // We've been given data directly, render immediately.
             self.render();
+        }
+        else
+        {
+            /* We've not been given any data to render.
+             *
+             * Notify the addon that we're ready and wait for data to render.
+             */
+            addon.postMessage({
+                src:    'sidebar-content',
+                action: 'loaded',
+                url:    'js/topics-sidebar.js'
+            });
+        }
+    },
+
+    /** @brief  Handle an incoming message from the addon.
+     *  @param  msg     The message data:
+     *                      {action: *action*, action-secific-data}
+     *                          Valid actions:
+     *                              'load',         topics:[]
+     *                              'currentUrl',   url:'...'
+     */
+    addonMessage: function(msg) {
+        var self    = this;
+
+        switch (msg.action)
+        {
+        case 'load':
+            console.log("TopicsView:addonMessage(): "
+                        +   "'setModel' from[ %s ], %d topics",
+                        msg.src, msg.topics.length);
+
+            self.setModel( msg.topics );
+            break;
+
+        case 'currentUrl':
+            console.log("TopicsView:addonMessage(): "
+                        +   "'currentUrl' from[ %s ], url[ %s ]",
+                        msg.src, msg.url);
+
+            self.currentUrl( msg.url );
+            break;
+
+        default:
+            console.log("TopicsView:addonMessage(): unhandled message %j",
+                        msg);
+            break;
         }
     },
 
@@ -369,8 +91,6 @@ var TopicsView  = Backbone.View.extend({
      */
     setModel: function(model) {
         var self    = this;
-
-        log("TopicsView::setModel(): %d topics", model.length);
 
         self.options.model = model;
 
@@ -386,7 +106,7 @@ var TopicsView  = Backbone.View.extend({
     currentUrl: function(url) {
         var self    = this;
 
-        log("TopicsView::currentUrl(): url[ %s ]", url);
+        //console.log("TopicsView::currentUrl(): url[ %s ]", url);
 
         self._currentUrl = url;
 
@@ -400,7 +120,7 @@ var TopicsView  = Backbone.View.extend({
             topics  = self.options.model;
         if (! topics)   { return; }
 
-        log("TopicsView::render(): %d topics", topics.length);
+        console.log("TopicsView::render(): %d topics", topics.length);
 
         self.$topics.empty();
         topics.forEach(function(topic) {
@@ -446,7 +166,8 @@ var TopicsView  = Backbone.View.extend({
         e.preventDefault();
         e.stopPropagation();
 
-        log("TopicsView::openInTab(): %s, %sshift, %sctrl, %salt, %smeta",
+        console.log("TopicsView::openInTab(): "
+                    +   "%s, %sshift, %sctrl, %salt, %smeta",
                 $a.attr('href'),
                 (e.shiftKey ? ' ' : '!'),
                 (e.altKey   ? ' ' : '!'),
@@ -454,8 +175,8 @@ var TopicsView  = Backbone.View.extend({
                 (e.metaKey  ? ' ' : '!'));
 
         // Post that we're ready
-        proxy.postMessage({
-            src:    'sidebar',
+        addon.postMessage({
+            src:    'sidebar-content',
             action: 'visit',
             url:    $a.attr('href'),
             current:(! e.metaKey)
@@ -483,7 +204,7 @@ var TopicsView  = Backbone.View.extend({
 
         /*
         var $tags   = $src.parent().find( $src.prop('tagName') );
-        log("drag start: src[ %s-%d.%s ]",
+        console.log("drag start: src[ %s-%d.%s ]",
                     $src.prop('tagName'),
                     $tags.index($src),
                     $src.attr('class'));
@@ -502,7 +223,7 @@ var TopicsView  = Backbone.View.extend({
 
         /*
         var $tags   = $src.parent().find( $src.prop('tagName') );
-        log("drag end: src[ %s-%d.%s ]",
+        console.log("drag end: src[ %s-%d.%s ]",
                     $src.prop('tagName'),
                     $tags.index($src),
                     $src.attr('class'));
@@ -554,7 +275,7 @@ var TopicView   = Backbone.View.extend({
                 //TopicView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
-                log("Template error: %s, html[ %s ]", e.message, html);
+                console.log("Template error: %s, html[ %s ]", e.message, html);
             }
         }
 
@@ -575,7 +296,7 @@ var TopicView   = Backbone.View.extend({
     setModel: function(model) {
         var self    = this;
 
-        log("TopicView::setModel(): topic[ %s ], %d items",
+        console.log("TopicView::setModel(): topic[ %s ], %d items",
                 model.title, model.items.length);
 
         self.options.model = model;
@@ -627,7 +348,7 @@ var TopicView   = Backbone.View.extend({
 
         if (_.isEmpty(self.$toggle))  { return; }
 
-        log("TopicView::toggle()");
+        console.log("TopicView::toggle()");
 
         var title   = self.$toggle.attr('title');
 
@@ -697,7 +418,7 @@ var TopicView   = Backbone.View.extend({
 
             /*
             var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-            log("TopicView::dragEnter: src[ %s-%d.%s ]: %d",
+            console.log("TopicView::dragEnter: src[ %s-%d.%s ]: %d",
                         $src.prop('tagName'),
                         $srcTags.index($src),
                         $src.attr('class'),
@@ -707,7 +428,7 @@ var TopicView   = Backbone.View.extend({
         /*
         else
         {
-            log("TopicView::dragEnter: EXTERNAL item: %s.%s: %d",
+            console.log("TopicView::dragEnter: EXTERNAL item: %s.%s: %d",
                         $tgt.prop('tagName'), $tgt.attr('class'), dragCount);
         }
         // */
@@ -738,7 +459,7 @@ var TopicView   = Backbone.View.extend({
             {
                 var $srcTags   = $src.parent()
                                         .find( '> '+ $src.prop('tagName') );
-                log("TopicView::dragLeave: src[ %s-%d.%s ]: %d",
+                console.log("TopicView::dragLeave: src[ %s-%d.%s ]: %d",
                             $src.prop('tagName'),
                             $srcTags.index($src),
                             $src.attr('class'),
@@ -772,7 +493,7 @@ var TopicView   = Backbone.View.extend({
 
         // /*
         var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-        log("TopicView::dragDrop: src[ %s-%d.%s ]",
+        console.log("TopicView::dragDrop: src[ %s-%d.%s ]",
                     $src.prop('tagName'),
                     $srcTags.index($src),
                     $src.attr('class'));
@@ -803,9 +524,9 @@ var TopicView   = Backbone.View.extend({
              *      dropping pre-formated HTML -- use it directly;
              *  - 'text/plain'
              *      dropping plain-text -- ignore??;
-            log("TopicView::dragDrop: dataTransfer types:");
+            console.log("TopicView::dragDrop: dataTransfer types:");
             _.each(dataTransfer.types, function(type) {
-                log("TopicView::dragDrop:   %s: %s",
+                console.log("TopicView::dragDrop:   %s: %s",
                             type, dataTransfer.getData(type));
             });
 
@@ -959,7 +680,7 @@ var ItemView    = Backbone.View.extend({
                 //ItemView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
-                log("Template error: %s, html[ %s ]", e.message, html);
+                console.log("Template error: %s, html[ %s ]", e.message, html);
             }
         }
 
@@ -984,7 +705,7 @@ var ItemView    = Backbone.View.extend({
     setModel: function(model) {
         var self    = this;
 
-        log("ItemView::setModel(): id[ %s ]", model.id);
+        console.log("ItemView::setModel(): id[ %s ]", model.id);
 
         self.options.model = model;
 
@@ -1012,45 +733,330 @@ var ItemView    = Backbone.View.extend({
      */
 });
 
-/** @brief  Handle a postMessage()
- *  @param  msg     The message data:
- *                      {action: *action*, action-secific-data}
- *                          Valid actions:
- *                              'load', topics:[]
- */
-proxy.on('message', function(msg) {
-
-    log("js/topics-sidebar.js: message %j", msg);
-
-    if (! mainView) { return; }
-
-    switch (msg.action)
-    {
-    case 'load':
-        mainView.setModel( msg.topics );
-        break;
-
-    case 'currentUrl':
-        mainView.currentUrl( msg.url );
-        break;
-    }
-});
-
 $(document).ready(function() {
-    //log("js/topics-sidebar.js: Document Ready.");
+    //console.log("js/topics-sidebar.js: Document Ready.");
 
-    // Establish our mainView
+    // Establish our primary view
     var $curation   = $('#collaborative-curation');
-
-    mainView = new TopicsView({el: $curation});
-    $curation.data('view', mainView);
-
-    // Post that we're ready
-    proxy.postMessage({
-        src:    'sidebar',
-        action: 'loaded',
-        url:    'js/topics-sidebar.js'
-    });
+    $curation.data('view', new TopicsView({el: $curation}));
 });
 
-//log("js/topics-sidebar.js loaded");
+//console.log("js/topics-sidebar.js loaded");
+
+/****************************************************************************
+ * Logging {
+ *
+ *  Override console.log() to send data for logging to the plugin.
+ */
+
+/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
+ *          write the result to the console.
+ *  @param  fmt     The printf format string;
+ *  @param  args    Following arguments to fulfill 'fmt';
+ */
+console.log = function(fmt, args) {
+    args = Array.slice(arguments);
+
+    var str = sprintf.apply(this, args);
+
+    addon.postMessage({src:      'sidebar-content',
+                       action:   'console',
+                       str:      str});
+    //console.log( str );
+};
+
+/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
+ *          return the resulting string.
+ *  @param  fmt     The printf format string;
+ *  @param  args    Following arguments to fulfill 'fmt';
+ *
+ *  @return The generated string.
+ */
+function sprintf(fmt, args)
+{
+    var str = '';
+    if (! _.isArray(args))
+    {
+        args = Array.prototype.slice.call(arguments).slice(1);
+    }
+
+    /********************************************
+     * Process the provided 'fmt' and 'args'
+     *  %s  = string
+     *  %d  = integer (decimal)
+     *  %x  = integer (hexadecimal, 0x)
+     *  %o  = integer (octal,       0)
+     *  %f  = floating point
+     *  %g  = floating point
+     *  %j  = JSON
+     */
+    var matches = fmt.match(/(\%[sdxofgj])/g),
+        pos     = 0;
+
+    if (matches && (matches.length > 0))
+    {
+        for (var idex = 0, len = Math.min(matches.length, args.length);
+                idex < len;
+                    ++idex)
+        {
+            var match       = matches[idex],
+                arg         = args[idex],
+                posMatch    = fmt.indexOf(match, pos);
+            if (posMatch > pos)
+            {
+                str += fmt.slice(pos, posMatch);
+                pos  = posMatch;
+            }
+
+            var formatted   = '?';
+            try {
+                switch (match[1])
+                {
+                // String
+                case 's':
+                    formatted = arg;
+                    break;
+
+                // Integer
+                case 'd':
+                    formatted = parseInt(arg, 10);
+                    break;
+
+                case 'x':
+                    formatted = parseInt(arg, 16);
+                    break;
+
+                case 'o':
+                    formatted = parseInt(arg, 8);
+                    break;
+
+                // Floating point
+                case 'f':
+                case 'g':
+                    formatted = parseFloat(arg);
+                    break;
+
+                // JSON
+                case 'j':
+                    formatted = JSON.stringify(arg);
+                    break;
+                }
+            } catch(e) {
+                formatted = "**Format Error: "+ e.message;
+            }
+
+            str += (formatted ? formatted.toString() : '');
+            pos += match.length;
+        }
+    }
+
+    if (pos < fmt.length)
+    {
+        str += fmt.slice(pos);
+    }
+
+    return str;
+}
+
+/* Logging }
+ ****************************************************************************
+ * drag-and-drop {
+ *
+ */
+
+/** @brief  Given a drag-and-drop dataTransfer object, generate a matching set
+ *          of items representing the raw item data.
+ *  @param  topic           The topic associated with this drop;
+ *  @param  dataTransfer    The dataTransfer object from a drag-and-drop Drop
+ *                          request;
+ *
+ *  @return An array of item objects;
+ */
+function dataTransfer2Items(topic, dataTransfer)
+{
+    /* Dropping an "External" item.
+     *
+     * Type-based Heuristic:
+     *  - 'application/x-moz-file' (or dataTransfer.files.length > 0)
+     *      dropping an external file from the system
+     *          use dataTransfer.files
+     *              {size, type, name, mozFullPath}
+     *  - 'text/x-moz-url' but no 'text/_moz_htmlcontext'
+     *      dropping a URL from the address bar
+     *          use 'text/x-moz-url', splitting the URL from the title
+     *  - 'text/x-moz-place'
+     *      dropping a bookmark entry {title, uri}
+     *          use 'text/html'
+     *  - 'text/html'
+     *      dropping pre-formated HTML -- use it directly;
+     *  - 'text/plain'
+     *      dropping plain-text -- ignore??;
+     */
+    console.log("dataTransfer2Items: types:");
+    _.each(dataTransfer.types, function(type) {
+        console.log("dataTransfer2Items:   %s: %s",
+                    type, dataTransfer.getData(type));
+    });
+
+    var items   = [];
+    if (dataTransfer.types.contains('application/x-moz-file'))
+    {
+        // Create an entry for each file
+        console.log("dataTransfer2Items:   %d: application/x-moz-file entries:",
+            dataTransfer.mozItemCount);
+
+        for (var idex = 0; idex < dataTransfer.mozItemCount; idex++)
+        {
+            var file;
+            try {
+                file = dataTransfer.mozGetDataAt('application/x-moz-file',
+                                                 idex);
+            } catch(e) {
+                file = e;
+            }
+
+            console.log("dataTransfer2Items:    %d: %j", idex, file);
+        }
+    }
+    else if (dataTransfer.files && (dataTransfer.files.length > 0))
+    {
+        // Create an entry for each file
+        console.log("dataTransfer2Items:   %d: file entries:",
+            dataTransfer.files.length);
+
+        _.each(dataTransfer.files, function(file, idex) {
+            var url         = 'file://'+ file.mozFullPath,
+                title       = file.name,
+                selector    = '';
+
+            console.log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
+                idex, url, title);
+
+            items.push({
+                timestamp:  (new Date()).getTime(),
+                content:    '<a href="'+ url +'">'+ title +'</a>',
+                url:        url,
+                selector:   selector,
+                topicId:    topic.id,
+                order:      '',
+                comments:   []
+            });
+        });
+    }
+    else if (dataTransfer.types.contains('text/x-moz-place'))
+    {
+        // Bookmark entry {title, url} (could also use 'text/html')
+        var data        = JSON.parse(
+                            dataTransfer.getData('text/x-moz-place')),
+            url         = data.uri,
+            title       = data.title,
+            selector    = '';
+
+        console.log("dataTransfer2Items:   text/x-moz-place: data[ %j ]", data);
+
+        items.push({
+            timestamp:  (new Date()).getTime(),
+            content:    '<a href="'+ url +'">'+ title +'</a>',
+            url:        url,
+            selector:   selector,
+            topicId:    topic.id,
+            order:      '',
+            comments:   []
+        });
+    }
+    else if ( dataTransfer.types.contains('text/x-moz-url') &&
+              (! dataTransfer.types.contains('text/_moz_htmlcontext')) )
+    {
+        /* URL from address bar
+         *  use 'text/x-moz-url', splitting the URL from the title
+         */
+        var data        = dataTransfer.getData('text/x-moz-url'),
+            parts       = data.split("\n");
+
+        console.log("dataTransfer2Items:   %d: text-x-moz-urls without _moz_htmlcontext",
+            parts.length);
+
+        for (var idex = 0, len = parts.length; idex < len; idex += 2)
+        {
+            var url         = parts[idex],
+                title       = parts[idex+1],
+                selector    = '';
+
+            console.log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
+                idex, url, title);
+
+            items.push({
+                timestamp:  (new Date()).getTime(),
+                content:    '<a href="'+ url +'">'+ title +'</a>',
+                url:        url,
+                selector:   selector,
+                topicId:    topic.id,
+                order:      '',
+                comments:   []
+            });
+        }
+    }
+    else if (dataTransfer.types.contains('text/html'))
+    {
+        /* Use the dropped HTML
+         *
+         *  :TODO: Grab the page URL (via tabs)
+         *         and generate the page selector.
+         */
+        var data        = dataTransfer.getData('text/html'),
+            url         = 'url://of.source/page',
+            selector    = '#content > .selector';
+
+        console.log("dataTransfer2Items:   text/html: data[ %s ]", data);
+
+        items.push({
+            timestamp:  (new Date()).getTime(),
+            content:    data,
+            url:        url,
+            selector:   selector,
+            topicId:    topic.id,
+            order:      '',
+            comments:   []
+        });
+    }
+    // else, IGNORE (by NOT adding anyting to items)
+
+    return items;
+}
+/* drag-and-drop }
+ ****************************************************************************
+ * Date Formatting utilities {
+ *
+ *  Called from the '#curation-topic' template applied in render().
+ *  The template itself is defined in data/view/topics/index.html
+ *
+ */
+function padNum(num, len)
+{
+    len = len || 2;
+    num = ''+ num;
+
+    return '00000000'.substr(0, len - num.length) + num;
+}
+function ts2timeStr(ts)
+{
+    var date        = new Date(ts),
+        hour        = date.getHours(),
+        meridian    = 'a';
+
+    if      (hour >   12)   { meridian = 'p'; hour -= 12; }
+    else if (hour === 12)   { meridian = 'p'; }
+
+    return hour +':'+ padNum(date.getMinutes()) + meridian;
+}
+function ts2dateStr(ts)
+{
+    var date    = new Date(ts),
+        dateStr = date.getFullYear()            +'.'
+                + padNum(date.getMonth() + 1)   +'.'
+                + padNum(date.getDate());
+
+    return dateStr;
+}
+/* Date formatting utilities }
+ ****************************************************************************/
