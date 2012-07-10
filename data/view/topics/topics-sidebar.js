@@ -1,6 +1,6 @@
 var root        = window || unsafeWindow,
     $           = root.$,
-    proxy       = self;
+    proxy       = self,
     mainView    = null;
 
 // Ensure that Backbone has a proper reference to jQuery
@@ -190,15 +190,39 @@ function dataTransfer2Items(topic, dataTransfer)
                     type, dataTransfer.getData(type));
     });
 
-    var types   = [].slice.call(dataTransfer.types, 0),
-        items   = [];
-    if (dataTransfer.files && (dataTransfer.files.length > 0))
+    var items   = [];
+    if (dataTransfer.types.contains('application/x-moz-file'))
     {
         // Create an entry for each file
-        _.each(dataTransfer.files, function(file) {
+        log("dataTransfer2Items:   %d: application/x-moz-file entries:",
+            dataTransfer.mozItemCount);
+
+        for (var idex = 0; idex < dataTransfer.mozItemCount; idex++)
+        {
+            var file;
+            try {
+                file = dataTransfer.mozGetDataAt('application/x-moz-file',
+                                                 idex);
+            } catch(e) {
+                file = e;
+            }
+
+            log("dataTransfer2Items:    %d: %j", idex, file);
+        }
+    }
+    else if (dataTransfer.files && (dataTransfer.files.length > 0))
+    {
+        // Create an entry for each file
+        log("dataTransfer2Items:   %d: file entries:",
+            dataTransfer.files.length);
+
+        _.each(dataTransfer.files, function(file, idex) {
             var url         = 'file://'+ file.mozFullPath,
                 title       = file.name,
                 selector    = '';
+
+            log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
+                idex, url, title);
 
             items.push({
                 timestamp:  (new Date()).getTime(),
@@ -211,7 +235,7 @@ function dataTransfer2Items(topic, dataTransfer)
             });
         });
     }
-    else if (types.indexOf('text/x-moz-place') >= 0)
+    else if (dataTransfer.types.contains('text/x-moz-place'))
     {
         // Bookmark entry {title, url} (could also use 'text/html')
         var data        = JSON.parse(
@@ -219,6 +243,8 @@ function dataTransfer2Items(topic, dataTransfer)
             url         = data.uri,
             title       = data.title,
             selector    = '';
+
+        log("dataTransfer2Items:   text/x-moz-place: data[ %j ]", data);
 
         items.push({
             timestamp:  (new Date()).getTime(),
@@ -230,8 +256,8 @@ function dataTransfer2Items(topic, dataTransfer)
             comments:   []
         });
     }
-    else if ((types.indexOf('text/x-moz-url') >= 0) &&
-             (types.indexOf('text/_moz_htmlcontext') < 0))
+    else if ( dataTransfer.types.contains('text/x-moz-url') &&
+              (! dataTransfer.types.contains('text/_moz_htmlcontext')) )
     {
         /* URL from address bar
          *  use 'text/x-moz-url', splitting the URL from the title
@@ -239,11 +265,17 @@ function dataTransfer2Items(topic, dataTransfer)
         var data        = dataTransfer.getData('text/x-moz-url'),
             parts       = data.split("\n");
 
+        log("dataTransfer2Items:   %d: text-x-moz-urls without _moz_htmlcontext",
+            parts.length);
+
         for (var idex = 0, len = parts.length; idex < len; idex += 2)
         {
             var url         = parts[idex],
                 title       = parts[idex+1],
                 selector    = '';
+
+            log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
+                idex, url, title);
 
             items.push({
                 timestamp:  (new Date()).getTime(),
@@ -256,7 +288,7 @@ function dataTransfer2Items(topic, dataTransfer)
             });
         }
     }
-    else if (types.indexOf('text/html') >= 0)
+    else if (dataTransfer.types.contains('text/html'))
     {
         /* Use the dropped HTML
          *
@@ -266,6 +298,8 @@ function dataTransfer2Items(topic, dataTransfer)
         var data        = dataTransfer.getData('text/html'),
             url         = 'url://of.source/page',
             selector    = '#content > .selector';
+
+        log("dataTransfer2Items:   text/html: data[ %s ]", data);
 
         items.push({
             timestamp:  (new Date()).getTime(),
@@ -331,6 +365,20 @@ var TopicsView  = Backbone.View.extend({
         self.options.model = model;
 
         self.render();
+
+        return self;
+    },
+
+    /** @brief  Used by main to communicate the URL of the currently active
+     *          tab.
+     *  @param  url     The url;
+     */
+    currentUrl: function(url) {
+        var self    = this;
+
+        log("TopicsView::currentUrl(): url[ %s ]", url);
+
+        self._currentUrl = url;
 
         return self;
     },
@@ -964,14 +1012,16 @@ proxy.on('message', function(msg) {
 
     log("js/topics-sidebar.js: message %j", msg);
 
+    if (! mainView) { return; }
+
     switch (msg.action)
     {
     case 'load':
+        mainView.setModel( msg.topics );
+        break;
 
-        if (mainView)
-        {
-            mainView.setModel( msg.topics );
-        }
+    case 'currentUrl':
+        mainView.currentUrl( msg.url );
         break;
     }
 });
