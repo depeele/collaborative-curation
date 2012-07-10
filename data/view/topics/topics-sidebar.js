@@ -1,10 +1,15 @@
+var proxy       = addon,
+    mainView    = null;
+
+/*
 var root        = window || unsafeWindow,
     $           = root.$,
-    proxy       = self,
+    proxy       = addon,
     mainView    = null;
 
 // Ensure that Backbone has a proper reference to jQuery
 Backbone.setDomLibrary($);
+// */
 
 /****************************************************************************
  * Date Formatting utilities {
@@ -146,9 +151,14 @@ function sprintf(fmt, args)
  */
 function log(fmt, args)
 {
-    args = Array.prototype.slice.call(arguments);
+    args = Array.slice(arguments);
 
-    console.log( sprintf.apply(root, args) );
+    var str = sprintf.apply(this, args);
+
+    proxy.postMessage({src:      'sidebar',
+                       action:   'console',
+                       str:      str});
+    //console.log( str );
 }
 /* Logging }
  ****************************************************************************
@@ -445,7 +455,7 @@ var TopicsView  = Backbone.View.extend({
 
         // Post that we're ready
         proxy.postMessage({
-            name:   'sidebar',
+            src:    'sidebar',
             action: 'visit',
             url:    $a.attr('href'),
             current:(! e.metaKey)
@@ -1037,7 +1047,7 @@ $(document).ready(function() {
 
     // Post that we're ready
     proxy.postMessage({
-        name:   'sidebar',
+        src:    'sidebar',
         action: 'loaded',
         url:    'js/topics-sidebar.js'
     });
