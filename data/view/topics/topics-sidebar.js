@@ -257,7 +257,9 @@ var TopicView   = Backbone.View.extend({
         'dragenter':                    'dragEnter',
         'dragleave':                    'dragLeave',
 
-        'drop':                         'dragDrop'
+        'drop':                         'dragDrop',
+
+        'dropExternal':                 'dragDropExternal'
     },
 
     template:   '#curation-topic',
@@ -491,145 +493,42 @@ var TopicView   = Backbone.View.extend({
         var $src    = (gDragging || $(dataTransfer.mozSourceNode));
         if (! $src) { return; }
 
-        // /*
-        var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') );
-        console.log("TopicView::dragDrop: src[ %s-%d.%s ]",
-                    $src.prop('tagName'),
-                    $srcTags.index($src),
-                    $src.attr('class'));
-        // */
-
         var $tgt    = $(e.target).closest(
                         (! gDragging || gDragging.hasClass('curation-item')
                             ? '.curation-item,.curation-topic'
                             : '.curation-topic'));
+
+        /*
+        var $srcTags   = $src.parent().find( '> '+ $src.prop('tagName') ),
+            $tgtTags   = $tgt.parent().find( '> '+ $tgt.prop('tagName') );
+
+        console.log("TopicView::dragDrop: src[ %s-%d.%s ]",
+                    $src.prop('tagName'),
+                    $srcTags.index($src),
+                    $src.attr('class'));
+        console.log("TopicView::dragDrop: tgt[ %s-%d.%s ]",
+                    $tgt.prop('tagName'),
+                    $tgtTags.index($tgt),
+                    $tgt.attr('class'));
+        // */
+
+        /* :NOTE:
+         *  The drop of an external item is now handled by sbDrop() in the main
+         *  sidebar view where the dataTransfer object is normalized and
+         *  attached to a new, custom 'dropExternal' event.  The original
+         *  'drop' event *should have been* canceled and the new 'dropExternal'
+         *  event fired.
+         *
+         *  If that's working correctly, we should *never* reach this point
+         *  without a valud in 'gDragging'.
+         */
         if (! gDragging)
         {
-            var items   = dataTransfer2Items(self.options.model, dataTransfer);
-
-            /* Dropping an "External" item.
-             *
-             * Type-based Heuristic:
-             *  - 'application/x-moz-file' (or dataTransfer.files.length > 0)
-             *      dropping an external file from the system
-             *          use dataTransfer.files
-             *              {size, type, name, mozFullPath}
-             *  - 'text/x-moz-url' but no 'text/_moz_htmlcontext'
-             *      dropping a URL from the address bar
-             *          use 'text/x-moz-url', splitting the URL from the title
-             *  - 'text/x-moz-place'
-             *      dropping a bookmark entry {title, uri}
-             *          use 'text/html'
-             *  - 'text/html'
-             *      dropping pre-formated HTML -- use it directly;
-             *  - 'text/plain'
-             *      dropping plain-text -- ignore??;
-            console.log("TopicView::dragDrop: dataTransfer types:");
-            _.each(dataTransfer.types, function(type) {
-                console.log("TopicView::dragDrop:   %s: %s",
-                            type, dataTransfer.getData(type));
-            });
-
-            var types   = [].slice.call(dataTransfer.types, 0),
-                items   = [];
-            if (dataTransfer.files && (dataTransfer.files.length > 0))
-            {
-                // Create an entry for each file
-                _.each(dataTransfer.files, function(file) {
-                    var url         = 'file://'+ file.mozFullPath,
-                        title       = file.name,
-                        selector    = '';
-
-                    items.push({
-                        timestamp:  (new Date()).getTime(),
-                        content:    '<a href="'+ url +'">'+ title +'</a>',
-                        url:        url,
-                        selector:   selector,
-                        topicId:    self.options.model.id,
-                        order:      '',
-                        comments:   []
-                    });
-                });
-            }
-            else if (types.indexOf('text/x-moz-place') >= 0)
-            {
-                // Bookmark entry {title, url} (could also use 'text/html')
-                var data        = JSON.parse(
-                                    dataTransfer.getData('text/x-moz-place')),
-                    url         = data.uri,
-                    title       = data.title,
-                    selector    = '';
-
-                items.push({
-                    timestamp:  (new Date()).getTime(),
-                    content:    '<a href="'+ url +'">'+ title +'</a>',
-                    url:        url,
-                    selector:   selector,
-                    topicId:    self.options.model.id,
-                    order:      '',
-                    comments:   []
-                });
-            }
-            else if ((types.indexOf('text/x-moz-url') >= 0) &&
-                     (types.indexOf('text/_moz_htmlcontext') < 0))
-            {
-                // URL from address bar
-                //  use 'text/x-moz-url', splitting the URL from the title
-                var data        = dataTransfer.getData('text/x-moz-url'),
-                    parts       = data.split("\n");
-
-                for (var idex = 0, len = parts.length; idex < len; idex += 2)
-                {
-                    var url         = parts[idex],
-                        title       = parts[idex+1],
-                        selector    = '';
-
-                    items.push({
-                        timestamp:  (new Date()).getTime(),
-                        content:    '<a href="'+ url +'">'+ title +'</a>',
-                        url:        url,
-                        selector:   selector,
-                        topicId:    self.options.model.id,
-                        order:      '',
-                        comments:   []
-                    });
-                }
-            }
-            else if (types.indexOf('text/html') >= 0)
-            {
-                // Use the dropped HTML
-                //
-                //  :TODO: Grab the page URL (via tabs)
-                //         and generate the page selector.
-                var data        = dataTransfer.getData('text/html'),
-                    url         = 'url://of.source/page',
-                    selector    = '#content > .selector';
-
-                items.push({
-                    timestamp:  (new Date()).getTime(),
-                    content:    data,
-                    url:        url,
-                    selector:   selector,
-                    topicId:    self.options.model.id,
-                    order:      '',
-                    comments:   []
-                });
-            }
-            // else, IGNORE (by NOT adding anyting to items)
-            // */
-
-            // Create new item(s) add them to the item list.
-            var $after  = ($tgt.hasClass('curation-item')
-                            ? $tgt
-                            : self.$items.children().last());
-            _.each(items, function(item) {
-                var view    = new ItemView({model:item});
-                view.$el.insertAfter( $after );
-
-                $after = view.$el;
-            });
+            console.log("TopicView::dragDrop: *** gDragging shouldn't be null");
+            return;
         }
-        else if ($tgt.get(0) !== $src.get(0))
+
+        if ($tgt.get(0) !== $src.get(0))
         {
             if ($tgt.hasClass('curation-item') ||
                 $src.hasClass('curation-topic'))
@@ -641,6 +540,62 @@ var TopicView   = Backbone.View.extend({
                 self.$items.append( $src );
             }
         }
+
+        /* Directly remove the 'drag-over' class on $tgt since 'dragleave' will
+         * NOT be triggerd on the target element.
+         */
+        $('.drag-over').removeClass('drag-over')
+                       .removeData('drag-count');
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+    },
+
+    /** @brief  Handle the custom 'dropExternal' event triggered by the main
+     *          sidebar view when an external resource is dropped.
+     *
+     *  This custom event should have a normalized dataTransfer object in
+     *  'detail'.
+     */
+    dragDropExternal: function(e) {
+        var self            = this,
+            event           = (e.detail
+                                ? e
+                                : e.originalEvent),
+            dataTransfer    = event.detail;
+        if (! dataTransfer) { return; }
+
+        console.log("TopicView::dragDropExternal: dataTransfer: %j",
+                    dataTransfer);
+
+        var $tgt    = $(e.target).closest(
+                        (! gDragging || gDragging.hasClass('curation-item')
+                            ? '.curation-item,.curation-topic'
+                            : '.curation-topic'));
+
+        /*
+        var $tgtTags   = $tgt.parent().find( '> '+ $tgt.prop('tagName') );
+
+        console.log("TopicView::dragDrop: tgt[ %s-%d.%s ]",
+                    $tgt.prop('tagName'),
+                    $tgtTags.index($tgt),
+                    $tgt.attr('class'));
+        // */
+
+        var $after  = ($tgt.hasClass('curation-item')
+                        ? $tgt
+                        : self.$items.children().last()),
+            items   = dataTransfer2Items(self.options.model, dataTransfer);
+
+        // Create new item(s) add them to the item list.
+        _.each(items, function(item) {
+            var view    = new ItemView({model:item});
+            view.$el.insertAfter( $after );
+
+            $after = view.$el;
+        });
 
         /* Directly remove the 'drag-over' class on $tgt since 'dragleave' will
          * NOT be triggerd on the target element.
@@ -757,12 +712,11 @@ $(document).ready(function() {
 console.log = function(fmt, args) {
     args = Array.slice(arguments);
 
-    var str = sprintf.apply(this, args);
-
     addon.postMessage({src:      'sidebar-content',
-                       action:   'console',
-                       str:      str});
-    //console.log( str );
+                       action:   'log',
+                       str:      sprintf.apply(this, args)
+                       //args:     args
+    });
 };
 
 /** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
@@ -775,9 +729,9 @@ console.log = function(fmt, args) {
 function sprintf(fmt, args)
 {
     var str = '';
-    if (! _.isArray(args))
+    if (! Array.isArray(args))
     {
-        args = Array.prototype.slice.call(arguments).slice(1);
+        args = Array.slice(arguments, 1);
     }
 
     /********************************************
@@ -864,19 +818,20 @@ function sprintf(fmt, args)
  *
  */
 
-/** @brief  Given a drag-and-drop dataTransfer object, generate a matching set
- *          of items representing the raw item data.
+/** @brief  Given a drag-and-drop dataTransfer object (that has been made
+ *          client-side accessible via our addon's drag-and-drop handler),
+ *          generate a matching set of items representing the raw item data.
  *  @param  topic           The topic associated with this drop;
  *  @param  dataTransfer    The dataTransfer object from a drag-and-drop Drop
- *                          request;
+ *                          request -- possibly "normalized" by the main
+ *                          sidebar view and delivered via 'dropExternal'
+ *                          custom event;
  *
  *  @return An array of item objects;
  */
 function dataTransfer2Items(topic, dataTransfer)
 {
-    /* Dropping an "External" item.
-     *
-     * Type-based Heuristic:
+    /* Type-based Heuristic:
      *  - 'application/x-moz-file' (or dataTransfer.files.length > 0)
      *      dropping an external file from the system
      *          use dataTransfer.files
@@ -892,62 +847,54 @@ function dataTransfer2Items(topic, dataTransfer)
      *  - 'text/plain'
      *      dropping plain-text -- ignore??;
      */
-    console.log("dataTransfer2Items: types:");
-    _.each(dataTransfer.types, function(type) {
-        console.log("dataTransfer2Items:   %s: %s",
-                    type, dataTransfer.getData(type));
-    });
+    var items   = [],
+        hasType = function(val) {
+            return (dataTransfer.types.indexOf(val) >= 0);
+        };
 
-    var items   = [];
-    if (dataTransfer.types.contains('application/x-moz-file'))
+    /*
+    if (hasType('application/x-moz-file'))
     {
+        var data    = dataTransfer['application/x-moz-file'];
+
         // Create an entry for each file
         console.log("dataTransfer2Items:   %d: application/x-moz-file entries:",
-            dataTransfer.mozItemCount);
+                    data.length);
 
-        for (var idex = 0; idex < dataTransfer.mozItemCount; idex++)
-        {
-            var file;
-            try {
-                file = dataTransfer.mozGetDataAt('application/x-moz-file',
-                                                 idex);
-            } catch(e) {
-                file = e;
-            }
-
+        _.each(data, function(file, idex) {
             console.log("dataTransfer2Items:    %d: %j", idex, file);
-        }
+        });
     }
-    else if (dataTransfer.files && (dataTransfer.files.length > 0))
+    else
+    // */
+
+    if (dataTransfer.files && (dataTransfer.files.length > 0))
     {
         // Create an entry for each file
         console.log("dataTransfer2Items:   %d: file entries:",
             dataTransfer.files.length);
 
         _.each(dataTransfer.files, function(file, idex) {
-            var url         = 'file://'+ file.mozFullPath,
-                title       = file.name,
-                selector    = '';
+            console.log("dataTransfer2Items:    %d: %j", idex, file);
 
-            console.log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
-                idex, url, title);
+            var url     = 'file://'+ file.path,
+                title   = file.name;
 
             items.push({
                 timestamp:  (new Date()).getTime(),
                 content:    '<a href="'+ url +'">'+ title +'</a>',
                 url:        url,
-                selector:   selector,
+                selector:   '',
                 topicId:    topic.id,
                 order:      '',
                 comments:   []
             });
         });
     }
-    else if (dataTransfer.types.contains('text/x-moz-place'))
+    else if (hasType('text/x-moz-place'))
     {
         // Bookmark entry {title, url} (could also use 'text/html')
-        var data        = JSON.parse(
-                            dataTransfer.getData('text/x-moz-place')),
+        var data        = dataTransfer['text/x-moz-place'],
             url         = data.uri,
             title       = data.title,
             selector    = '';
@@ -964,46 +911,40 @@ function dataTransfer2Items(topic, dataTransfer)
             comments:   []
         });
     }
-    else if ( dataTransfer.types.contains('text/x-moz-url') &&
-              (! dataTransfer.types.contains('text/_moz_htmlcontext')) )
+    else if ( hasType('text/x-moz-url') &&
+              (! hasType('text/_moz_htmlcontext')) )
     {
         /* URL from address bar
          *  use 'text/x-moz-url', splitting the URL from the title
          */
-        var data        = dataTransfer.getData('text/x-moz-url'),
-            parts       = data.split("\n");
+        var data        = dataTransfer['text/x-moz-url'];
 
-        console.log("dataTransfer2Items:   %d: text-x-moz-urls without _moz_htmlcontext",
-            parts.length);
+        console.log("dataTransfer2Items:   %d: text-x-moz-urls "
+                    +   "without _moz_htmlcontext",
+                    data.length);
 
-        for (var idex = 0, len = parts.length; idex < len; idex += 2)
-        {
-            var url         = parts[idex],
-                title       = parts[idex+1],
-                selector    = '';
-
-            console.log("dataTransfer2Items:    %d: url[ %s ], title[ %s ]",
-                idex, url, title);
+        _.each(data, function(entry, idex) {
+            console.log("dataTransfer2Items:      %d: %j", idex, entry);
 
             items.push({
                 timestamp:  (new Date()).getTime(),
-                content:    '<a href="'+ url +'">'+ title +'</a>',
-                url:        url,
+                content:    '<a href="'+ entry.url +'">'+ entry.title +'</a>',
+                url:        entry.url,
                 selector:   selector,
                 topicId:    topic.id,
                 order:      '',
                 comments:   []
             });
-        }
+        });
     }
-    else if (dataTransfer.types.contains('text/html'))
+    else if (hasType('text/html'))
     {
         /* Use the dropped HTML
          *
          *  :TODO: Grab the page URL (via tabs)
          *         and generate the page selector.
          */
-        var data        = dataTransfer.getData('text/html'),
+        var data        = dataTransfer['text/html'],
             url         = 'url://of.source/page',
             selector    = '#content > .selector';
 
