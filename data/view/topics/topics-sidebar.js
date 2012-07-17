@@ -23,6 +23,8 @@ var TopicsView  = Backbone.View.extend({
     initialize: function() {
         var self    = this;
 
+        self.$el.data('view', self);
+
         // Cache element references
         self.$topicInput = self.$el.find('.new-topic');
         self.$topics     = self.$el.find('.curation-topics');
@@ -269,6 +271,8 @@ var TopicView   = Backbone.View.extend({
     initialize: function() {
         var self    = this;
 
+        self.$el.data('view', self);
+
         if (_.isString( self.template ))
         {
             // Resolve our template
@@ -396,9 +400,11 @@ var TopicView   = Backbone.View.extend({
             $src            = gDragging,
             canDrop         = (dataTransfer && self.canDrop($src));
 
+        console.log("TopicView::dragOver()");
+
         if (! canDrop)  { return; }
 
-        dataTransfer.dropEffect = 'move';
+        dataTransfer.dropEffect = (gDragging ? 'move' : 'copy');
         e.preventDefault();
     },
     dragEnter: function(e) {
@@ -520,7 +526,7 @@ var TopicView   = Backbone.View.extend({
          *  event fired.
          *
          *  If that's working correctly, we should *never* reach this point
-         *  without a valud in 'gDragging'.
+         *  without a valid in 'gDragging'.
          */
         if (! gDragging)
         {
@@ -627,6 +633,8 @@ var ItemView    = Backbone.View.extend({
     initialize: function() {
         var self    = this;
 
+        self.$el.data('view', self);
+
         if (_.isString( self.template ))
         {
             // Resolve our template
@@ -692,8 +700,28 @@ $(document).ready(function() {
     //console.log("js/topics-sidebar.js: Document Ready.");
 
     // Establish our primary view
-    var $curation   = $('#collaborative-curation');
-    $curation.data('view', new TopicsView({el: $curation}));
+    var $curation   = $('#collaborative-curation'),
+        view        = new TopicsView({el: $curation});
+
+    $curation.data('view', view);
+
+    /* Include a document-level 'drop' handler to take care of 'drop' events
+     * that have been proxied to the sidebar document via sbDndProxy()/sbDrop()
+     * in the sidebar addon as 'dropExternal' events -- most likely because an
+     * item was dropped on the splitter while the sidebar was closed.
+     */
+    $(document).on('dropExternal', function(e) {
+
+        /* Create a new proxied event containing the incoming 'detail'
+         * (dataTransfer) data and trigger that event on the first
+         * '.curation-topic'.
+         */
+        var proxied     = $.Event('dropExternal', {
+                                    detail: e.originalEvent.detail
+                                  });
+
+        $curation.find('.curation-topic:first').trigger( proxied );
+    });
 });
 
 //console.log("js/topics-sidebar.js loaded");
