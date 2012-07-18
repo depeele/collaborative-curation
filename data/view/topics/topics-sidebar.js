@@ -661,7 +661,8 @@ var ItemView    = Backbone.View.extend({
      *                       timestamp: timestamp,
      *                       content:   content,
      *                       url:       source-page url,
-     *                       selector:  inter-page selector,
+     *                       location:  inter-page location (id),
+     *                       selector:  inter-page selector (starting at id),
      *                       topicId:   id of containing topic,
      *                       order:     sort order,
      *                       comments:  []}
@@ -710,7 +711,8 @@ var ItemView    = Backbone.View.extend({
             src:        'sidebar-content',
             action:     'visit',
             url:        self.options.model['url'],
-            selector:   self.options.model['selector'],
+            location:   self.options.model['location'],
+            selector:   '',
             current:    (! e.metaKey)
         });
     }
@@ -932,6 +934,7 @@ function dataTransfer2Items(topic, dataTransfer)
                 timestamp:  (new Date()).getTime(),
                 content:    content,
                 url:        url,
+                location:   '',
                 selector:   '',
                 topicId:    topic.id,
                 order:      '',
@@ -943,9 +946,20 @@ function dataTransfer2Items(topic, dataTransfer)
     {
         // Bookmark entry {title, url} (could also use 'text/html')
         var data        = dataTransfer['text/x-moz-place'],
-            url         = data.uri,
+            fullUrl     = data.uri,
+            url         = fullUrl,
             title       = data.title,
-            selector    = '';
+            hashStart   = url.lastIndexOf('#'),
+            hashEnd     = url.indexOf(' ', start),
+            location    = (hashEnd > hashStart
+                            ? url.substring(hashStart, hashEnd)
+                            : (hashStart >= 0
+                                ? url.substr(hashStart)
+                                : ''));
+        if (hashStart > 0)
+        {
+            url = url.substr(0, hashStart);
+        }
 
         /*
         console.log("dataTransfer2Items:   text/x-moz-place: data[ %j ]",
@@ -954,9 +968,10 @@ function dataTransfer2Items(topic, dataTransfer)
 
         items.push({
             timestamp:  (new Date()).getTime(),
-            content:    '<a href="'+ url +'">'+ title +'</a>',
+            content:    '<a href="'+ fullUrl +'">'+ title +'</a>',
             url:        url,
-            selector:   selector,
+            location:   location,
+            selector:   '',
             topicId:    topic.id,
             order:      '',
             comments:   []
@@ -983,7 +998,8 @@ function dataTransfer2Items(topic, dataTransfer)
                 timestamp:  (new Date()).getTime(),
                 content:    '<a href="'+ entry.url +'">'+ entry.title +'</a>',
                 url:        entry.url,
-                selector:   selector,
+                location:   location,
+                selector:   '',
                 topicId:    topic.id,
                 order:      '',
                 comments:   []
@@ -998,48 +1014,40 @@ function dataTransfer2Items(topic, dataTransfer)
                             ? item.html
                             : item),
             $html       = $('<div>'+ html +'</div>'),
-            url         = (item && item.srcUrl
-                            ? item.srcUrl.replace(/#.*$/, '')
+            fullUrl     = (item && item.srcUrl
+                            ? item.srcUrl
                             : 'url://of.source/page'),
-            selector    = '';   //'#content > .selector';
+            url         = fullUrl,
+            location    = '';
 
         /*
         console.log("dataTransfer2Items:   text/html: item[ %s ]",
                     JSON.stringify(item));
         // */
 
-        var $id = $html.find('[id]').last();
+        var $id = $html.find('[id]').first();
         if ($id && ($id.length > 0))
         {
             /* Use the id of the *last* element in the incoming HTML that has
              * an id
              */
-            selector = '#'+ $id.attr('id');
+            location = '#'+ $id.attr('id');
         }
         else if ( hasType('text/_moz_htmlcontext'))
         {
-            // Use _moz_htmlcontext to construct a selector
+            // Use _moz_htmlcontext to construct a location
             var context     = dataTransfer['text/_moz_htmlcontext'],
                 $context    = $(context),
                 $inner      = $context.find(':not(:has(*))').last(),
                 path        = [];
 
-            /*
-            console.log("dataTransfer2Items:   text/html: context[ %s ]",
-                        context);
-            console.log("dataTransfer2Items:   text/html: html[ %s ]",
-                        html);
-            // */
-
-            $inner.append( $html.children(':first').clone() );
-
-            /* Use the id of the *last* element in our constructed context that
-             * has an id
+            /* Use the id of the *nearest* element in our context that has an
+             * id
              */
-            $id = $context.find('[id]').last();
+            $id = $inner.closest('[id]');
             if ($id && ($id.length > 0))
             {
-                selector = '#'+ $id.attr('id');
+                location = '#'+ $id.attr('id');
             }
         }
 
@@ -1070,6 +1078,16 @@ function dataTransfer2Items(topic, dataTransfer)
             });
         });
 
+        if (location.length > 0)
+        {
+            // Remove any '#' from the url
+            var hashStart   = url.lastIndexOf('#');
+            if (hashStart > 0)
+            {
+                url = url.substr(0, hashStart);
+            }
+        }
+
         /*
         console.log("dataTransfer2Items:   text/html: html[ %s ]", html);
         console.log("dataTransfer2Items:   text/html: $html[ %s ]",
@@ -1080,7 +1098,8 @@ function dataTransfer2Items(topic, dataTransfer)
             timestamp:  (new Date()).getTime(),
             content:    $html.html().trim(),
             url:        url,
-            selector:   selector,
+            location:   location,
+            selector:   '',
             topicId:    topic.id,
             order:      '',
             comments:   []
