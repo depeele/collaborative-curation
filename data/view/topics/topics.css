@@ -111,7 +111,7 @@ body {
 .curation-topic > header:hover .curation-controls {
   visibility:       visible;
 }
-.curation-topic .ui-icon:hover {
+.curation-topic .ui-icon {
   background-image:   url(../../css/images/ui-icons_888888_256x240.png);
 }
 .curation-topic .ui-icon:hover {
@@ -144,7 +144,7 @@ body {
   /*
   padding:    0.5em 3.8em 0.4em 15px;  * right:time, left:comments/location */
 
-  border-bottom:  1px dashed #333;
+  border-bottom:  1px dashed #222;
 
   /*overflow:   hidden;*/
 }
