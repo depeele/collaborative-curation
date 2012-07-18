@@ -25,6 +25,11 @@ var TopicsView  = Backbone.View.extend({
 
         self.$el.data('view', self);
 
+        /* Add 'dragover' at the document level to allow dropping at any
+         * location within the sidebar
+         */
+        $(document).on('dragover', _.bind(self.dragOver, self));
+
         // Cache element references
         self.$topicInput = self.$el.find('.new-topic');
         self.$topics     = self.$el.find('.curation-topics');
@@ -189,6 +194,15 @@ var TopicsView  = Backbone.View.extend({
      * Drag-and-drop
      *
      */
+    dragOver: function(e) {
+        var self            = this,
+            dataTransfer    = (e.dataTransfer
+                                ? e.dataTransfer
+                                : e.originalEvent.dataTransfer);
+
+        dataTransfer.dropEffect = (gDragging ? 'move' : 'copy');
+        e.preventDefault();
+    },
     dragStart: function(e) {
         var self            = this,
             dataTransfer    = (e.dataTransfer
@@ -623,8 +637,8 @@ var ItemView    = Backbone.View.extend({
     className:  'curation-item',
 
     events:     {
-        'click a':  'visitItem',
-        'render':   'render'
+        'click .control-visit': 'visitItem',
+        'render':               'render'
     },
 
     template:   '#curation-item',
