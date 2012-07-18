@@ -7,7 +7,7 @@ html {
 
   color:        #eee;
 
-  overflow:     hidden;
+  overflow:     hidden auto;
 }
 body {
   padding:  0.25em;
