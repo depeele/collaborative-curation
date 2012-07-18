@@ -75,12 +75,10 @@
      </div>
      <div class='curation-controls'
       ><a class="control-visit ui-icon ui-icon-extlink"
-          href="<%= url %>"
-          data-location="<%= location %>"
-          data-selector="<%= selector %>"
-          title="visit">visit</a
+            href="<%= url %><%= (_.isEmpty(location) ? '' : location) %>"
+            title="visit">visit</a
       ><div class="control-delete ui-icon ui-icon-trash"
-           title='delete'>delete</div
+            title='delete'>delete</div
      ></div>
  </script>
 </html>
