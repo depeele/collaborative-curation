@@ -1,3 +1,13 @@
+html {
+  font:     100% "Helvetica Neue",Helvetica,Arial,sans-serif;
+  margin:   0;
+  padding:  0;
+}
+body {
+  margin:   0;
+  padding:  0;
+}
+
 .clearfix:before,
 .clearfix:after {
   display: table;
@@ -17,9 +27,6 @@
   display: block;
   width: 100%;
   min-height: 28px;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 article,
@@ -41,9 +48,6 @@ video {
 }
 audio:not([controls]) {
   display: none;
-}
-html {
-  font-size: 100%;
 }
 a:focus {
   outline: thin dotted #333;
@@ -100,7 +104,6 @@ input[type="submit"] {
   cursor: pointer;
 }
 input[type="search"] {
-  -moz-box-sizing: content-box;
   box-sizing: content-box;
 }
 textarea {
@@ -126,9 +129,6 @@ textarea {
   display: block;
   width: 100%;
   min-height: 28px;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 p {
@@ -316,9 +316,6 @@ pre {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   font-size: 12px;
   color: #333333;
-  -moz-border-radius: 3px;
-  border-radius: 3px;
-  -moz-border-radius: 3px;
   border-radius: 3px;
 }
 code {
@@ -340,9 +337,6 @@ pre {
   background-color: #f5f5f5;
   border: 1px solid #ccc;
   border: 1px solid rgba(0, 0, 0, 0.15);
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  -moz-border-radius: 4px;
   border-radius: 4px;
 }
 pre.prettyprint {
@@ -397,7 +391,6 @@ input,
 button,
 select,
 textarea {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 label {
   display: block;
@@ -453,17 +446,10 @@ input[type="color"],
 .uneditable-input {
   background-color: #ffffff;
   border: 1px solid #cccccc;
-  -moz-border-radius: 3px;
   border-radius: 3px;
-  -moz-border-radius: 3px;
-  border-radius: 3px;
-  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -moz-transition: border linear 0.2s, box-shadow linear 0.2s;
   transition: border linear 0.2s, box-shadow linear 0.2s;
-  -moz-transition: border linear 0.2s, box-shadow linear 0.2s;
   transition: border linear 0.2s, box-shadow linear 0.2s;
 }
 textarea:focus,
@@ -487,9 +473,6 @@ input[type="color"]:focus,
   outline: thin dotted \9;
   /* IE6-9 */
 
-  -moz-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
-  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
-  -moz-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
   box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
 }
 input[type="radio"],
@@ -712,9 +695,6 @@ input[type="checkbox"][readonly] {
 .control-group.warning select:focus,
 .control-group.warning textarea:focus {
   border-color: #a47e3c;
-  -moz-box-shadow: 0 0 6px #dbc59e;
-  box-shadow: 0 0 6px #dbc59e;
-  -moz-box-shadow: 0 0 6px #dbc59e;
   box-shadow: 0 0 6px #dbc59e;
 }
 .control-group.warning .input-prepend .add-on,
@@ -742,9 +722,6 @@ input[type="checkbox"][readonly] {
 .control-group.warning select:focus,
 .control-group.warning textarea:focus {
   border-color: #a47e3c;
-  -moz-box-shadow: 0 0 6px #dbc59e;
-  box-shadow: 0 0 6px #dbc59e;
-  -moz-box-shadow: 0 0 6px #dbc59e;
   box-shadow: 0 0 6px #dbc59e;
 }
 .control-group.warning .input-prepend .add-on,
@@ -772,9 +749,6 @@ input[type="checkbox"][readonly] {
 .control-group.error select:focus,
 .control-group.error textarea:focus {
   border-color: #953b39;
-  -moz-box-shadow: 0 0 6px #d59392;
-  box-shadow: 0 0 6px #d59392;
-  -moz-box-shadow: 0 0 6px #d59392;
   box-shadow: 0 0 6px #d59392;
 }
 .control-group.error .input-prepend .add-on,
@@ -802,9 +776,6 @@ input[type="checkbox"][readonly] {
 .control-group.error select:focus,
 .control-group.error textarea:focus {
   border-color: #953b39;
-  -moz-box-shadow: 0 0 6px #d59392;
-  box-shadow: 0 0 6px #d59392;
-  -moz-box-shadow: 0 0 6px #d59392;
   box-shadow: 0 0 6px #d59392;
 }
 .control-group.error .input-prepend .add-on,
@@ -832,9 +803,6 @@ input[type="checkbox"][readonly] {
 .control-group.success select:focus,
 .control-group.success textarea:focus {
   border-color: #356635;
-  -moz-box-shadow: 0 0 6px #7aba7b;
-  box-shadow: 0 0 6px #7aba7b;
-  -moz-box-shadow: 0 0 6px #7aba7b;
   box-shadow: 0 0 6px #7aba7b;
 }
 .control-group.success .input-prepend .add-on,
@@ -862,9 +830,6 @@ input[type="checkbox"][readonly] {
 .control-group.success select:focus,
 .control-group.success textarea:focus {
   border-color: #356635;
-  -moz-box-shadow: 0 0 6px #7aba7b;
-  box-shadow: 0 0 6px #7aba7b;
-  -moz-box-shadow: 0 0 6px #7aba7b;
   box-shadow: 0 0 6px #7aba7b;
 }
 .control-group.success .input-prepend .add-on,
@@ -883,9 +848,6 @@ input:focus:required:invalid:focus,
 textarea:focus:required:invalid:focus,
 select:focus:required:invalid:focus {
   border-color: #e9322d;
-  -moz-box-shadow: 0 0 6px #f8b9b7;
-  box-shadow: 0 0 6px #f8b9b7;
-  -moz-box-shadow: 0 0 6px #f8b9b7;
   box-shadow: 0 0 6px #f8b9b7;
 }
 .form-actions {
@@ -917,9 +879,6 @@ select:focus:required:invalid:focus {
   cursor: not-allowed;
   background-color: #ffffff;
   border-color: #eee;
-  -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
-  -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.025);
 }
 :-moz-placeholder {
@@ -954,9 +913,6 @@ select:focus:required:invalid:focus {
   position: relative;
   margin-bottom: 0;
   vertical-align: middle;
-  -moz-border-radius: 0 3px 3px 0;
-  border-radius: 0 3px 3px 0;
-  -moz-border-radius: 0 3px 3px 0;
   border-radius: 0 3px 3px 0;
 }
 .input-prepend input:focus,
@@ -991,9 +947,6 @@ select:focus:required:invalid:focus {
 .input-prepend .btn,
 .input-append .btn {
   margin-left: -1px;
-  -moz-border-radius: 0;
-  border-radius: 0;
-  -moz-border-radius: 0;
   border-radius: 0;
 }
 .input-prepend .active,
@@ -1007,17 +960,11 @@ select:focus:required:invalid:focus {
 }
 .input-prepend .add-on:first-child,
 .input-prepend .btn:first-child {
-  -moz-border-radius: 3px 0 0 3px;
-  border-radius: 3px 0 0 3px;
-  -moz-border-radius: 3px 0 0 3px;
   border-radius: 3px 0 0 3px;
 }
 .input-append input,
 .input-append select,
 .input-append .uneditable-input {
-  -moz-border-radius: 3px 0 0 3px;
-  border-radius: 3px 0 0 3px;
-  -moz-border-radius: 3px 0 0 3px;
   border-radius: 3px 0 0 3px;
 }
 .input-append .uneditable-input {
@@ -1026,33 +973,21 @@ select:focus:required:invalid:focus {
 }
 .input-append .add-on:last-child,
 .input-append .btn:last-child {
-  -moz-border-radius: 0 3px 3px 0;
-  border-radius: 0 3px 3px 0;
-  -moz-border-radius: 0 3px 3px 0;
   border-radius: 0 3px 3px 0;
 }
 .input-prepend.input-append input,
 .input-prepend.input-append select,
 .input-prepend.input-append .uneditable-input {
-  -moz-border-radius: 0;
-  border-radius: 0;
-  -moz-border-radius: 0;
   border-radius: 0;
 }
 .input-prepend.input-append .add-on:first-child,
 .input-prepend.input-append .btn:first-child {
   margin-right: -1px;
-  -moz-border-radius: 3px 0 0 3px;
-  border-radius: 3px 0 0 3px;
-  -moz-border-radius: 3px 0 0 3px;
   border-radius: 3px 0 0 3px;
 }
 .input-prepend.input-append .add-on:last-child,
 .input-prepend.input-append .btn:last-child {
   margin-left: -1px;
-  -moz-border-radius: 0 3px 3px 0;
-  border-radius: 0 3px 3px 0;
-  -moz-border-radius: 0 3px 3px 0;
   border-radius: 0 3px 3px 0;
 }
 .search-query {
@@ -1063,9 +998,6 @@ select:focus:required:invalid:focus {
   /* IE7-8 doesn't have border-radius, so don't indent the padding */
 
   margin-bottom: 0;
-  -moz-border-radius: 14px;
-  border-radius: 14px;
-  -moz-border-radius: 14px;
   border-radius: 14px;
 }
 .form-search input,
@@ -1207,9 +1139,6 @@ table {
   border: 1px solid #dddddd;
   border-collapse: separate;
   border-left: 0;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  -moz-border-radius: 4px;
   border-radius: 4px;
 }
 .table-bordered th,
@@ -1230,26 +1159,19 @@ table {
 .table-bordered thead:first-child tr:first-child th:first-child,
 .table-bordered tbody:first-child tr:first-child td:first-child {
   border-top-left-radius: 4px;
-  -moz-border-radius-topleft: 4px;
 }
 .table-bordered thead:first-child tr:first-child th:last-child,
 .table-bordered tbody:first-child tr:first-child td:last-child {
   border-top-right-radius: 4px;
-  -moz-border-radius-topright: 4px;
 }
 .table-bordered thead:last-child tr:last-child th:first-child,
 .table-bordered tbody:last-child tr:last-child td:first-child {
-  -moz-border-radius: 0 0 0 4px;
-  border-radius: 0 0 0 4px;
-  -moz-border-radius: 0 0 0 4px;
   border-radius: 0 0 0 4px;
   border-bottom-left-radius: 4px;
-  -moz-border-radius-bottomleft: 4px;
 }
 .table-bordered thead:last-child tr:last-child th:last-child,
 .table-bordered tbody:last-child tr:last-child td:last-child {
   border-bottom-right-radius: 4px;
-  -moz-border-radius-bottomright: 4px;
 }
 .table-striped tbody tr:nth-child(odd) td,
 .table-striped tbody tr:nth-child(odd) th {

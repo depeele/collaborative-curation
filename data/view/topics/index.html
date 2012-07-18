@@ -14,6 +14,8 @@
     -->
   <link rel='stylesheet' type='text/css' href='../../css/bootstrap.css'
   										 media='all' />
+  <link rel='stylesheet' type='text/css' href='../../css/ui.css'
+  										 media='all' />
   <link rel='stylesheet' type='text/css' href='topics.css' media='all' />
 
   <!-- Foundational scripts -->
@@ -48,6 +50,14 @@
    <header>
     <div class="toggle" title="collapse topic">&nbsp;</div>
     <h1><%= title %></h1>
+    <div class='curation-controls'
+     ><div class="control-edit ui-icon ui-icon-pencil"
+          title="edit">edit</div
+     ><div class="control-delete ui-icon ui-icon-trash"
+          title='delete'>delete</div
+      ><div class="control-move-top ui-icon ui-icon-arrowthickstop-1-n"
+           title='move to top'>move to top</div
+    ></div>
    </header>
    <ul class="curation-items">
      <!-- curation-item entries -->
@@ -63,7 +73,13 @@
      <div class="curation-content">
       <%= content %>
      </div>
-     <a class="curation-location" href="<%= url %>"
-	 							  data-selector="<%= selector %>">&nbsp;</a>
+     <div class='curation-controls'
+      ><a class="control-visit ui-icon ui-icon-extlink"
+          href="<%= url %>"
+	 				data-selector="<%= selector %>"
+          title="visit">visit</a
+      ><div class="control-delete ui-icon ui-icon-trash"
+           title='delete'>delete</div
+     ></div>
  </script>
 </html>

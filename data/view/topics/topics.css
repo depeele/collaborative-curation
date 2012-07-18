@@ -1,38 +1,33 @@
 html {
-  font:       100% arial, helvetica, sans-serif;
-
   min-height: 100%;
   width:      100%;
-
-  margin:     0;
-  padding:    0;
 
   background-image: -moz-linear-gradient(top left, #444, #222);
   background-repeat:no-repeat;
 
   color:        #eee;
+
+  overflow:     hidden;
 }
 body {
-  margin:   0;
   padding:  0.25em;
-}
-a {
-  /*color:            #aae;*/
-  color:            #c93;
-  text-decoration:  none;
-  text-shadow:      1px 1px 2px #000;
-}
-a:hover {
-  text-shadow:      1px 1px 2px #000, 0 0 0.5em #fc3, 0 0 1px #b82;
-}
-input {
-  border-radius:  0.5em;
-  padding:        0.2em;
 }
 
 #collaborative-curation {
   padding:  0;
   margin:   0;
+}
+#collaborative-curation code,pre {
+  display:          block;
+  font-size:        0.8em;
+
+  padding:          0 0.2em;
+
+  color:            #eee;
+  background-color: inherit;
+
+  border-radius:    0;
+  border:           none;
 }
 
 .curation-input {
@@ -56,12 +51,18 @@ input {
   opacity:  1.0;
 }
 
+/********************************
+ * curation-topics {
+ */
 .curation-topics {
   list-style: none;
   margin:     0;
   padding:    0;
 }
 
+/********************************
+ * curation-topic {
+ */
 .curation-topic {
   position:     relative;
 
@@ -86,7 +87,7 @@ input {
 .curation-topic > header h1 {
   font-size:      1em;
   margin:         0;
-  padding:        0;
+  padding:        0 50px 0 0; /* right-space for curation-controls */
 
   text-shadow:    1px 1px 2px #000;
   border-bottom:  1px solid #333;
@@ -96,13 +97,44 @@ input {
 .curation-topic:hover > header h1 {
   text-shadow:    1px 1px 2px #000, 0 0 0.5em #eee, 0 0 1px #999;
 }
+.curation-topic > header .curation-controls {
+  position:         absolute;
+  top:              0;
+  right:            2px;
 
+  height:           16px;
+  width:            auto;
+  line-height:      16px;
+
+  visibility:       hidden;
+}
+.curation-topic > header:hover .curation-controls {
+  visibility:       visible;
+}
+.curation-topic .ui-icon:hover {
+  background-image:   url(../../css/images/ui-icons_888888_256x240.png);
+}
+.curation-topic .ui-icon:hover {
+  background-image:   url(../../css/images/ui-icons_2e83ff_256x240.png);
+}
+
+/* Hide the topic 'move-to-top' if it's already at the top */
+.curation-topic:first-child > header .curation-controls .control-move-top {
+  visibility: hidden;
+}
+
+/********************************
+ * curation-items {
+ */
 .curation-items {
   list-style: none;
   margin:     0;
   padding:    0;
 }
 
+/********************************
+ * curation-item {
+ */
 .curation-item {
   position:   relative;
   font-size:  0.9em;
@@ -114,7 +146,7 @@ input {
 
   border-bottom:  1px dashed #333;
 
-  overflow:   hidden;
+  /*overflow:   hidden;*/
 }
 .curation-item:last-child {
   border-bottom:  none;
@@ -166,21 +198,26 @@ input {
 .curation-item .curation-content img {
   height: auto;
 }
-.curation-item .curation-location {
+
+.curation-item .curation-controls {
   position:         absolute;
-  top:              0.6em;
-  left:             0;
+  top:              0;
+  left:             -2px;
+
+  width:            16px;
+  height:           auto;
+  line-height:      16px;
 
   visibility:       hidden;
-
-  width:            10px;
-  height:           10px;
-
-  background-image: url(images/visit.png);
 }
-.curation-item:hover .curation-location {
+.curation-item:hover .curation-controls {
   visibility:       visible;
 }
+/* curation-item }
+ * curation-items }
+ * curation-topic }
+ * curation-topics }
+ ********************************/
 
 /**********************************************
  * Topic close state
@@ -203,6 +240,9 @@ input {
  */
 .dragging {
   opacity:  0.4;
+}
+.dragging .curation-controls {
+  visibility:       hidden !important;
 }
 
 .curation-topic.drag-over,
