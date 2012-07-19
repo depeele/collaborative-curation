@@ -8,9 +8,9 @@
   <!-- All resources must use URLs relative to the base path of this script:
             data/view/topics/index.html
             
-            data(root) == ../../
-            css        == ../../css
-            js         == ../../js
+            data(root) == ./
+            css        == ./css
+            js         == ./js
     -->
   <link rel='stylesheet' type='text/css' href='css/bootstrap.css'
                                          media='all' />
@@ -19,6 +19,7 @@
   <link rel='stylesheet' type='text/css' href='css/topics.css' media='all' />
 
   <!-- Foundational scripts -->
+  <script type='text/javascript' src='console.js'></script>
   <script type='text/javascript' src='js/jquery.js'></script>
   <script type='text/javascript' src='js/underscore.min.js'></script>
   <script type='text/javascript' src='js/backbone.min.js'></script>
@@ -27,7 +28,7 @@
   <script type='text/javascript' src='app.js'></script>
 
   <!-- Models -->
-  <!-- script type='text/javascript' src='model/database.js'></script -->
+  <!-- script type='text/javascript' src='js/backbone-indexeddb.js'></script -->
   <!-- script type='text/javascript' src='model/user.js'></script -->
   <!-- script type='text/javascript' src='model/topic.js'></script -->
   <!-- script type='text/javascript' src='model/item.js'></script -->
@@ -49,6 +50,11 @@
    <ul    class='curation-topics'></ul>
   </div>
  </body>
+ <script type='text/javascript'>
+(function($) {
+    $(document).ready( app.ready );
+}(jQuery));
+ </script>
 
  <script id='curation-topic' type='text/template'>
    <header>
