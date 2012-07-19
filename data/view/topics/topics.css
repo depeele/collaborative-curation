@@ -34,11 +34,13 @@ body {
   /* Adjust for .new-topic:width, which causes the input box to spill out of
    * the #collaborative-curation container.
    */
+  display:      block;
   margin-right: 25px;
 }
-.curation-input .new-topic {
+.curation-input input {
   width:          100%;
-
+}
+.curation-input .new-topic {
   background-image:     url(images/add.png);
   background-position:  right center;
   background-repeat:    no-repeat;
@@ -97,10 +99,25 @@ body {
 .curation-topic:hover > header h1 {
   text-shadow:    1px 1px 2px #000, 0 0 0.5em #eee, 0 0 1px #999;
 }
+.curation-topic > header .curation-input {
+  position:     relative;
+  margin-right: -50px;
+  height:       1.1em;
+}
+.curation-topic > header .curation-input input {
+  position:     absolute;
+  top:          0;
+  left:         0;
+  z-index:      2;
+
+  padding:      0;
+}
+
 .curation-topic > header .curation-controls {
   position:         absolute;
   top:              0;
   right:            2px;
+  z-index:          1;
 
   height:           16px;
   width:            auto;

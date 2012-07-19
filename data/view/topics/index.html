@@ -49,14 +49,21 @@
  <script id='curation-topic' type='text/template'>
    <header>
     <div class="toggle" title="collapse topic">&nbsp;</div>
-    <h1><%= title %></h1>
+    <h1
+     ><span><%= title %></span
+     ><div class='curation-input'
+      ><input type='text' /></div
+    ></h1>
     <div class='curation-controls'
      ><div class="control-edit ui-icon ui-icon-pencil"
-          title="edit">edit</div
+           data-action='edit'
+           title="edit">edit</div
      ><div class="control-delete ui-icon ui-icon-trash"
-          title='delete'>delete</div
+           data-action='delete'
+           title='delete'>delete</div
       ><div class="control-move-top ui-icon ui-icon-arrowthickstop-1-n"
-           title='move to top'>move to top</div
+            data-action='moveTop'
+            title='move to top'>move to top</div
     ></div>
    </header>
    <ul class="curation-items">
@@ -75,9 +82,11 @@
      </div>
      <div class='curation-controls'
       ><a class="control-visit ui-icon ui-icon-extlink"
+            data-action='visit'
             href="<%= url %><%= (_.isEmpty(location) ? '' : location) %>"
             title="visit">visit</a
       ><div class="control-delete ui-icon ui-icon-trash"
+            data-action='delete'
             title='delete'>delete</div
      ></div>
  </script>

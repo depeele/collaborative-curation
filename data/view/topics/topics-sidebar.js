@@ -147,23 +147,34 @@ var TopicsView  = Backbone.View.extend({
         var self    = this,
             val     = self.$topicInput.val();
 
-        if ((e.which === 13) && (val.length > 0))
+        switch (e.which)
         {
-            // Add a new topic
-            var topic   = {
-                    title:  val,
-                    items:  []
-                },
-                view    = new TopicView({model: topic});
+        case 13:    // ENTER
+            if (val.length > 0)
+            {
+                // Add a new topic
+                var topic   = {
+                        title:  val,
+                        items:  []
+                    },
+                    view    = new TopicView({model: topic});
 
-            self.$topics.append( view.$el );
+                self.$topics.append( view.$el );
 
+                self.$topicInput.val('');
+                self.$topicInput.blur();
+
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            break;
+
+        case 27:    // ESC
             self.$topicInput.val('');
             self.$topicInput.blur();
-
-            e.preventDefault();
-            e.stopPropagation();
+            break;
         }
+
     },
 
     openInTab: function(e) {
@@ -268,6 +279,13 @@ var TopicView   = Backbone.View.extend({
 
         'render':                       'render',
 
+        'click header .control-edit':       'ctrlEdit',
+        'click header .control-delete':     'ctrlDelete',
+        'click header .control-move-top':   'ctrlMoveTop',
+
+        'blur header > h1 input':           'editComplete',
+        'keydown header > h1 input':        'editKey',
+
         // Drag-and-drop
         'dragover':                     'dragOver',
         'dragenter':                    'dragEnter',
@@ -339,8 +357,13 @@ var TopicView   = Backbone.View.extend({
         self.$el.empty();
         self.$el.append( $topic );
 
-        self.$toggle = self.$el.find('> header .toggle');
-        self.$items  = self.$el.find('> .curation-items');
+        self.$title      = self.$el.find('> header h1');
+        self.$titleSpan  = self.$title.find('span');
+        self.$titleInput = self.$title.find('input');
+        self.$titleInput.parent().hide();
+
+        self.$toggle     = self.$el.find('> header .toggle');
+        self.$items      = self.$el.find('> .curation-items');
 
         self.$items.empty();
 
@@ -366,9 +389,14 @@ var TopicView   = Backbone.View.extend({
     toggle: function(e) {
         var self    = this;
 
-        if (_.isEmpty(self.$toggle))  { return; }
+        if (_.isEmpty(self.$toggle) ||
+            (self.$titleInput && (self.$titleInput.get(0) == e.target)))
+        {
+            //console.log("TopicView::toggle(): IGNORE");
+            return;
+        }
 
-        console.log("TopicView::toggle()");
+        //console.log("TopicView::toggle()");
 
         var title   = self.$toggle.attr('title');
 
@@ -394,6 +422,57 @@ var TopicView   = Backbone.View.extend({
         }
 
         return self;
+    },
+
+    /**********************
+     * Control handlers
+     */
+    ctrlEdit: function(e) {
+        var self    = this;
+
+        // NOT draggable while editing
+        self.$el.attr('draggable', false);
+
+        self.$titleInput.val( self.$titleSpan.text() );
+        self.$titleSpan.hide();
+        self.$titleInput.parent().show();
+        self.$titleInput.focus();
+    },
+    ctrlDelete: function(e) {
+        var self    = this;
+    },
+    ctrlMoveTop: function(e) {
+        var self    = this,
+            $top    = self.$el.siblings().first();
+
+        self.$el.insertBefore($top);
+    },
+
+    editKey: function(e) {
+        var self    = this;
+
+        //console.log("TopicView::editKey(): %s", e.which);
+        switch (e.which)
+        {
+        case 13:    // ENTER
+            self.$titleInput.blur();
+            break;
+
+        case 27:    // ESC
+            self.$titleInput.val( self.$titleSpan.text() );
+            self.$titleInput.blur();
+            break;
+        }
+    },
+    editComplete: function(e) {
+        var self    = this;
+
+        self.$titleSpan.text( self.$titleInput.val() );
+        self.$titleInput.parent().hide();
+        self.$titleSpan.show();
+
+        // draggable again
+        self.$el.attr('draggable', true);
     },
 
     /**********************
