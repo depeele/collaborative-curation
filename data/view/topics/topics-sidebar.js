@@ -1,7 +1,170 @@
 /** @brief  The item currently being dragged
  *              (if initiated by a view in *this* script).
  */
+/*jslint nomen:false,laxbreak:true,white:false,onevar:false */
+/*global addon:false,_:false,$:false,Backbone:false,console:false,document:false */
+
 var gDragging   = null;
+
+/** @brief  A simple, modal mini-dialog used for confirmations.
+ *
+ *  Accepts the following options:
+ *      question        HTML of the question to present;
+ *      confirm         The confirmation text [ 'yes' ];
+ *      cancel          The cancellation text [ 'no' ];
+ *
+ *      primary         Which answer is primary? 'confirm' | [ 'cancel' ]
+ *
+ *      css             An object of CSS name/value pairs;
+ *
+ *      confirmed()     A callback to invoke if confirmed;
+ *      cancelled()     A callback to invoke if cancelled;
+ *
+ *  Triggers events:
+ *      'confirmed'
+ *      'cancelled'
+ */
+var MiniDialog  = Backbone.View.extend({
+    tagName:    'div',
+    className:  'ui-confirmation',
+
+    events: {
+        'click button':     'clickButton',
+        'render':           'render'
+    },
+
+    template:    '<div class="ui-question"><%= question %></div>'
+               + '<div class="ui-buttons">'
+               +  '<button name="yes"><%= confirm %></button>'
+               +  '<button name="no" ><%= cancel %></button>'
+               + '</div>',
+
+    /** @brief  Initialize a new instances.
+     */
+    initialize: function() {
+        var self    = this;
+
+        if (_.isString( self.template ))
+        {
+            // Resolve our template
+            var html    = self.template;
+            try {
+                //MiniDialog.prototype.template = _.template( html );
+                self.__proto__.template = _.template( html );
+            } catch(e) {
+                console.log("MiniDialog error: %s, html[ %s ]",
+                            e.message, html);
+            }
+        }
+
+        /* Include a document-level key handler to allow keyboard selection
+         * when the dialog is visible.
+         */
+        $(document).on('keydown.miniDialog', _.bind(self.keyPress, self));
+
+        if (self.options.question)
+        {
+            // We've been given data directly, render immediately.
+            self.render();
+        }
+    },
+
+    /** @brief  Render the given question.
+     */
+    render: function() {
+        var self        = this;
+        if (! self.options.question)    { return; }
+
+        var data    = _.extend({confirm:'yes',cancel:'no'}, self.options),
+            $body   = $( self.template( data ) );
+
+        self.$confirm = $body.find('button[name=yes]');
+        self.$cancel  = $body.find('button[name=no]');
+
+        if (self.options.primary === 'confirm')
+        {
+            self.$confirm.addClass('ui-priority-primary');
+            self.$cancel.addClass( 'ui-priority-secondary');
+        }
+        else
+        {
+            self.$confirm.addClass('ui-priority-secondary');
+            self.$cancel.addClass( 'ui-priority-primary');
+        }
+
+        self.$el.append( $body );
+
+        if (self.options.css)   { self.$el.css( self.options.css ); }
+
+        return self;
+    },
+
+    /** @brief  Remove this view from the DOM.
+     */
+    remove: function() {
+        var self    = this;
+
+        // Remove our document-level key handler
+        $(document).off('.miniDialog');
+
+        self.$el.hide('fast', function() {
+            self.$el.remove();
+        });
+        return self;
+    },
+
+    /************************************************************************
+     * Event handlers
+     *
+     */
+    keyPress: function(e) {
+        var self    = this;
+        if (! self.$el.is(':visible'))  { return; }
+
+        switch (e.which)
+        {
+        case 13:    // ENTER
+            if (self.options.primary === 'confirm')
+            {
+                self.$confirm.click();
+                return;
+            }
+            // fall through
+
+        case 27:    // ESC
+            self.$cancel.click();
+            break;
+        }
+    },
+
+    clickButton: function(e) {
+        var self    = this,
+            $button = $(e.target);
+
+        switch ($button.attr('name'))
+        {
+        case 'yes':
+            if (_.isFunction(self.options.confirmed))
+            {
+                self.options.confirmed();
+            }
+            self.$el.trigger('confirmed');
+            break;
+
+        case 'no':
+            if (_.isFunction(self.options.cancelled))
+            {
+                self.options.cancelled();
+            }
+            self.$el.trigger('canceled');
+            break;
+        }
+
+        // And, remove ourselves
+        self.remove();
+    }
+});
+
 
 /** @brief  A Backbone View for a list of Topics.  This is the primary view.
  */
@@ -25,10 +188,18 @@ var TopicsView  = Backbone.View.extend({
 
         self.$el.data('view', self);
 
-        /* Add 'dragover' at the document level to allow dropping at any
+        /* Add a document-level 'dragover' handler to allow dropping at any
          * location within the sidebar
          */
         $(document).on('dragover', _.bind(self.dragOver, self));
+
+        /* Add a document-level 'drop' handler to take care of 'drop' events
+         * that have been proxied to the sidebar document via
+         * sbDndProxy()/sbDrop() in the sidebar addon as 'dropExternal' events
+         * -- most likely because an item was dropped on the splitter while the
+         * sidebar was closed.
+         */
+        $(document).on('dropExternal', _.bind(self.dragDrop, self));
 
         // Cache element references
         self.$topicInput = self.$el.find('.new-topic');
@@ -139,6 +310,20 @@ var TopicsView  = Backbone.View.extend({
         return self;
     },
 
+    /** @brief  Add a new topic.
+     *  @param  topic   The topic model.
+     *
+     *  @return The new TopicView
+     */
+    addTopic: function(topic) {
+        var self    = this;
+            view    = new TopicView({model: topic});
+
+        self.$topics.append( view.$el );
+
+        return view;
+    },
+
     /************************************************************************
      * Event handlers
      *
@@ -153,13 +338,10 @@ var TopicsView  = Backbone.View.extend({
             if (val.length > 0)
             {
                 // Add a new topic
-                var topic   = {
-                        title:  val,
-                        items:  []
-                    },
-                    view    = new TopicView({model: topic});
-
-                self.$topics.append( view.$el );
+                self.addTopic({
+                    title:  val,
+                    items:  []
+                });
 
                 self.$topicInput.val('');
                 self.$topicInput.blur();
@@ -205,15 +387,6 @@ var TopicsView  = Backbone.View.extend({
      * Drag-and-drop
      *
      */
-    dragOver: function(e) {
-        var self            = this,
-            dataTransfer    = (e.dataTransfer
-                                ? e.dataTransfer
-                                : e.originalEvent.dataTransfer);
-
-        dataTransfer.dropEffect = (gDragging ? 'move' : 'copy');
-        e.preventDefault();
-    },
     dragStart: function(e) {
         var self            = this,
             dataTransfer    = (e.dataTransfer
@@ -264,6 +437,49 @@ var TopicsView  = Backbone.View.extend({
         e.stopPropagation();
         e.stopImmediatePropagation();
         return false;
+    },
+
+    // Document-level drag-and-drop handlers
+    dragOver: function(e) {
+        var self            = this,
+            dataTransfer    = (e.dataTransfer
+                                ? e.dataTransfer
+                                : e.originalEvent.dataTransfer);
+
+        dataTransfer.dropEffect = (gDragging ? 'move' : 'copy');
+        e.preventDefault();
+    },
+
+    dragDrop: function(e) {
+        var self    = this;
+
+        console.log("TopicsView::dragDrop:");
+
+        /* Create a new proxied event containing the incoming 'detail'
+         * (dataTransfer) data and trigger that event on the first
+         * '.curation-topic'.
+         */
+        var proxied     = $.Event('dropExternal', {
+                                    detail: e.originalEvent.detail
+                                  }),
+            $topic      = self.$el.find('.curation-topic:first');
+
+        console.log("TopicsView::dragDrop: topic[ %s ]", $topic);
+        if ($topic.length < 1)
+        {
+            /* There are NO topics currently defined.
+             *
+             * Create and add a new one, and use IT as the target.
+             */
+            var view    = self.addTopic({
+                            title:  'New Topic',
+                            items:  []
+                          });
+            $topic = view.$el;
+        }
+
+        console.log("TopicsView::dragDrop: topic2[ %s ]", $topic);
+        $topic.trigger( proxied );
     }
 });
 
@@ -357,12 +573,14 @@ var TopicView   = Backbone.View.extend({
         self.$el.empty();
         self.$el.append( $topic );
 
-        self.$title      = self.$el.find('> header h1');
+        self.$header     = self.$el.find('> header');
+        self.$title      = self.$header.find('h1');
         self.$titleSpan  = self.$title.find('span');
         self.$titleInput = self.$title.find('input');
         self.$titleInput.parent().hide();
 
-        self.$toggle     = self.$el.find('> header .toggle');
+        self.$toggle     = self.$header.find('.toggle');
+        self.$controls   = self.$header.find('.curation-controls');
         self.$items      = self.$el.find('> .curation-items');
 
         self.$items.empty();
@@ -439,7 +657,29 @@ var TopicView   = Backbone.View.extend({
         self.$titleInput.focus();
     },
     ctrlDelete: function(e) {
-        var self    = this;
+        var self    = this,
+            $button = $(e.target),
+            pos     = $button.position();
+
+        // Present a confirmation mini-dialog
+        var confirm = new MiniDialog({
+                        question:   'Delete this topic<br />and all items?',
+                        css:        {
+                            'z-index':  self.$controls.css('z-index') + 1,
+                            'width':    self.$controls.width(),
+                            'top':      pos.top,
+                            'right':    0
+                        },
+                        confirmed:  function() {
+                            console.log("TopicView::Delete (%s)",
+                                        self.options.model.title);
+                            self.$el.hide('fast', function() {
+                                self.remove();
+                            });
+                        }
+                      });
+
+        self.$header.append( confirm.$el );
     },
     ctrlMoveTop: function(e) {
         var self    = this,
@@ -674,7 +914,7 @@ var TopicView   = Backbone.View.extend({
                             ? '.curation-item,.curation-topic'
                             : '.curation-topic'));
 
-        /*
+        // /*
         var $tgtTags   = $tgt.parent().find( '> '+ $tgt.prop('tagName') );
 
         console.log("TopicView::dragDrop: tgt[ %s-%d.%s ]",
@@ -691,7 +931,15 @@ var TopicView   = Backbone.View.extend({
         // Create new item(s) add them to the item list.
         _.each(items, function(item) {
             var view    = new ItemView({model:item});
-            view.$el.insertAfter( $after );
+            if ($after.length < 1)
+            {
+                // First child
+                self.$items.append( view.$el );
+            }
+            else
+            {
+                view.$el.insertAfter( $after );
+            }
 
             $after = view.$el;
         });
@@ -716,8 +964,10 @@ var ItemView    = Backbone.View.extend({
     className:  'curation-item',
 
     events:     {
-        'click .control-visit': 'visitItem',
-        'render':               'render'
+        'render':                   'render',
+
+        'click .control-visit':     'ctrlVisit',
+        'click .control-delete':    'ctrlDelete'
     },
 
     template:   '#curation-item',
@@ -782,6 +1032,8 @@ var ItemView    = Backbone.View.extend({
         self.$el.attr('draggable', true);
         self.$el.html( self.template(item) );
 
+        self.$controls = self.$el.find('.curation-controls');
+
         return self;
     },
 
@@ -789,11 +1041,10 @@ var ItemView    = Backbone.View.extend({
      * Event handlers
      *
      */
-
-    visitItem: function(e) {
+    ctrlVisit: function(e) {
         var self    = this;
 
-        console.log("ItemView::visitItem(): item[ %s ]",
+        console.log("ItemView::ctrlVisit(): item[ %s ]",
                     JSON.stringify(self.options.model));
 
         e.preventDefault();
@@ -808,7 +1059,31 @@ var ItemView    = Backbone.View.extend({
             selector:   '',
             current:    (! e.metaKey)
         });
-    }
+    },
+    ctrlDelete: function(e) {
+        var self    = this,
+            $button = $(e.target),
+            pos     = $button.position();
+
+        // Present a confirmation mini-dialog
+        var confirm = new MiniDialog({
+                        question:   'Delete this item?',
+                        css:        {
+                            'z-index':  10,
+                            'top':      pos.top,
+                            'left':     0
+                        },
+                        confirmed:  function() {
+                            console.log("ItemView::Delete (%s)",
+                                        self.options.model.id);
+                            self.$el.hide('fast', function() {
+                                self.remove();
+                            });
+                        }
+                      });
+
+        self.$el.append( confirm.$el );
+    },
 });
 
 $(document).ready(function() {
@@ -817,26 +1092,6 @@ $(document).ready(function() {
     // Establish our primary view
     var $curation   = $('#collaborative-curation'),
         view        = new TopicsView({el: $curation});
-
-    $curation.data('view', view);
-
-    /* Include a document-level 'drop' handler to take care of 'drop' events
-     * that have been proxied to the sidebar document via sbDndProxy()/sbDrop()
-     * in the sidebar addon as 'dropExternal' events -- most likely because an
-     * item was dropped on the splitter while the sidebar was closed.
-     */
-    $(document).on('dropExternal', function(e) {
-
-        /* Create a new proxied event containing the incoming 'detail'
-         * (dataTransfer) data and trigger that event on the first
-         * '.curation-topic'.
-         */
-        var proxied     = $.Event('dropExternal', {
-                                    detail: e.originalEvent.detail
-                                  });
-
-        $curation.find('.curation-topic:first').trigger( proxied );
-    });
 });
 
 //console.log("js/topics-sidebar.js loaded");
