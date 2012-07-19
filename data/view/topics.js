@@ -8,7 +8,7 @@
 var root    = this,
     app     = root.app;
 
-app.view.TopicsView = Backbone.View.extend({
+app.View.TopicsView = Backbone.View.extend({
     events:     {
         'keydown input.new-topic':      'topicAddKey',
 
@@ -142,7 +142,7 @@ app.view.TopicsView = Backbone.View.extend({
 
         self.$topics.empty();
         topics.forEach(function(topic) {
-            var view    = new app.view.TopicView({model: topic});
+            var view    = new app.View.TopicView({model: topic});
 
             self.$topics.append( view.$el );
         });
@@ -157,7 +157,7 @@ app.view.TopicsView = Backbone.View.extend({
      */
     addTopic: function(topic) {
         var self    = this;
-            view    = new app.view.TopicView({model: topic});
+            view    = new app.View.TopicView({model: topic});
 
         self.$topics.append( view.$el );
 
@@ -293,7 +293,7 @@ app.view.TopicsView = Backbone.View.extend({
     dragDrop: function(e) {
         var self    = this;
 
-        console.log("TopicsView::dragDrop:");
+        //console.log("TopicsView::dragDrop:");
 
         /* Create a new proxied event containing the incoming 'detail'
          * (dataTransfer) data and trigger that event on the first
@@ -304,7 +304,7 @@ app.view.TopicsView = Backbone.View.extend({
                                   }),
             $topic      = self.$el.find('.curation-topic:first');
 
-        console.log("TopicsView::dragDrop: topic[ %s ]", $topic);
+        //console.log("TopicsView::dragDrop: topic[ %s ]", $topic);
         if ($topic.length < 1)
         {
             /* There are NO topics currently defined.
@@ -318,7 +318,7 @@ app.view.TopicsView = Backbone.View.extend({
             $topic = view.$el;
         }
 
-        console.log("TopicsView::dragDrop: topic2[ %s ]", $topic);
+        //console.log("TopicsView::dragDrop: topic2[ %s ]", $topic);
         $topic.trigger( proxied );
     }
 });

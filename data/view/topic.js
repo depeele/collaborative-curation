@@ -7,7 +7,7 @@
 var root    = this,
     app     = root.app;
 
-app.view.TopicView  = Backbone.View.extend({
+app.View.TopicView  = Backbone.View.extend({
     tagName:    'li',
     className:  'curation-topic',
 
@@ -48,7 +48,7 @@ app.view.TopicView  = Backbone.View.extend({
             // Resolve our template
             var html    = $(self.template).html();
             try {
-                //app.view.TopicView.prototype.template = _.template( html );
+                //app.View.TopicView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
                 console.log("Template error: %s, html[ %s ]", e.message, html);
@@ -111,7 +111,7 @@ app.view.TopicView  = Backbone.View.extend({
          * each.
          */
         topic.items.forEach(function(item) {
-            var view    = new app.view.ItemView({model: item});
+            var view    = new app.View.ItemView({model: item});
             
             self.$items.append( view.$el );
         });
@@ -184,7 +184,7 @@ app.view.TopicView  = Backbone.View.extend({
             pos     = $button.position();
 
         // Present a confirmation mini-dialog
-        var confirm = new app.view.MiniDialog({
+        var confirm = new app.View.MiniDialog({
                         question:   'Delete this topic<br />and all items?',
                         css:        {
                             'z-index':  self.$controls.css('z-index') + 1,
@@ -439,10 +439,10 @@ app.view.TopicView  = Backbone.View.extend({
                             ? '.curation-item,.curation-topic'
                             : '.curation-topic'));
 
-        // /*
+        /*
         var $tgtTags   = $tgt.parent().find( '> '+ $tgt.prop('tagName') );
 
-        console.log("TopicView::dragDrop: tgt[ %s-%d.%s ]",
+        console.log("TopicView::dragDropExternal: tgt[ %s-%d.%s ]",
                     $tgt.prop('tagName'),
                     $tgtTags.index($tgt),
                     $tgt.attr('class'));
@@ -453,10 +453,20 @@ app.view.TopicView  = Backbone.View.extend({
                         : self.$items.children().last()),
             items   = dataTransfer2Items(self.options.model, dataTransfer);
 
+        /*
+        console.log("TopicView::dragDropExternal: %d items: %j",
+                    items.length, items);
+        // */
+
         // Create new item(s) add them to the item list.
-        _.each(items, function(item) {
-            var view    = new app.view.ItemView({model:item});
-            if ($after.length < 1)
+        _.each(items, function(item, itemIndex) {
+            /*
+            console.log("TopicView::dragDropExternal: item %d: %j",
+                        itemIndex, item);
+            // */
+
+            var view    = new app.View.ItemView({model:item});
+            if ((! $after) || ($after.length < 1))
             {
                 // First child
                 self.$items.append( view.$el );
@@ -569,7 +579,7 @@ function dataTransfer2Items(topic, dataTransfer)
             url         = fullUrl,
             title       = data.title,
             hashStart   = url.lastIndexOf('#'),
-            hashEnd     = url.indexOf(' ', start),
+            hashEnd     = url.indexOf(' ', hashStart),
             location    = (hashEnd > hashStart
                             ? url.substring(hashStart, hashEnd)
                             : (hashStart >= 0

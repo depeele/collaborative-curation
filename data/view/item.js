@@ -7,7 +7,7 @@
 var root    = this,
     app     = root.app;
 
-app.view.ItemView   = Backbone.View.extend({
+app.View.ItemView   = Backbone.View.extend({
     tagName:    'li',
     className:  'curation-item',
 
@@ -32,7 +32,7 @@ app.view.ItemView   = Backbone.View.extend({
             // Resolve our template
             var html    = $(self.template).html();
             try {
-                //app.view.ItemView.prototype.template = _.template( html );
+                //app.View.ItemView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
                 console.log("Template error: %s, html[ %s ]", e.message, html);
@@ -114,7 +114,7 @@ app.view.ItemView   = Backbone.View.extend({
             pos     = $button.position();
 
         // Present a confirmation mini-dialog
-        var confirm = new app.view.MiniDialog({
+        var confirm = new app.View.MiniDialog({
                         question:   'Delete this item?',
                         css:        {
                             'z-index':  10,

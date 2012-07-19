@@ -30,7 +30,7 @@ var root    = this,
  *      'confirmed'
  *      'cancelled'
  */
-app.view.MiniDialog  = Backbone.View.extend({
+app.View.MiniDialog  = Backbone.View.extend({
     tagName:    'div',
     className:  'ui-confirmation',
 
@@ -55,7 +55,7 @@ app.view.MiniDialog  = Backbone.View.extend({
             // Resolve our template
             var html    = self.template;
             try {
-                //app.view.MiniDialog.prototype.template = _.template( html );
+                //app.View.MiniDialog.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
                 console.log("MiniDialog error: %s, html[ %s ]",
