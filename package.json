@@ -5,9 +5,7 @@
     "version":      "0.1", 
     "dependencies": [
         "api-utils",
-        "addon-kit",
-        "toolbarbutton",
-        "vold-utils"
+        "addon-kit"
     ],
     "fullName":     "Collaborative Curation and Reporting", 
     "id":           "jid1-Ji681JrcZcwuEg", 
