@@ -12,30 +12,34 @@
             css        == ../../css
             js         == ../../js
     -->
-  <link rel='stylesheet' type='text/css' href='../../css/bootstrap.css'
+  <link rel='stylesheet' type='text/css' href='css/bootstrap.css'
                                          media='all' />
-  <link rel='stylesheet' type='text/css' href='../../css/ui.css'
+  <link rel='stylesheet' type='text/css' href='css/ui.css'
                                          media='all' />
-  <link rel='stylesheet' type='text/css' href='topics.css' media='all' />
+  <link rel='stylesheet' type='text/css' href='css/topics.css' media='all' />
 
   <!-- Foundational scripts -->
-  <script type='text/javascript' src='../../js/jquery.js'></script>
-  <script type='text/javascript' src='../../js/underscore.min.js'></script>
-  <script type='text/javascript' src='../../js/backbone.min.js'></script>
+  <script type='text/javascript' src='js/jquery.js'></script>
+  <script type='text/javascript' src='js/underscore.min.js'></script>
+  <script type='text/javascript' src='js/backbone.min.js'></script>
+
+  <!-- Primary App -->
+  <script type='text/javascript' src='app.js'></script>
 
   <!-- Models -->
-  <!-- script type='text/javascript' src='../../model/database.js'></script -->
-  <!-- script type='text/javascript' src='../../model/user.js'></script -->
-  <!-- script type='text/javascript' src='../../model/topic.js'></script -->
-  <!-- script type='text/javascript' src='../../model/item.js'></script -->
-  <!-- script type='text/javascript' src='../../model/comment.js'></script -->
+  <!-- script type='text/javascript' src='model/database.js'></script -->
+  <!-- script type='text/javascript' src='model/user.js'></script -->
+  <!-- script type='text/javascript' src='model/topic.js'></script -->
+  <!-- script type='text/javascript' src='model/item.js'></script -->
+  <!-- script type='text/javascript' src='model/comment.js'></script -->
 
   <!-- Views -->
-  <!-- script type='text/javascript' src='../user.js'></script -->
-  <!-- script type='text/javascript' src='../topic.js'></script -->
-  <!-- script type='text/javascript' src='../item.js'></script -->
-  <!-- script type='text/javascript' src='../comment.js'></script -->
-  <script type='text/javascript' src='topics-sidebar.js'></script>
+  <script type='text/javascript' src='view/miniDialog.js'></script>
+  <!-- script type='text/javascript' src='view/user.js'></script -->
+  <script type='text/javascript' src='view/topic.js'></script>
+  <script type='text/javascript' src='view/item.js'></script>
+  <!-- script type='text/javascript' src='view/comment.js'></script -->
+  <script type='text/javascript' src='view/topics.js'></script>
  </head>
  <body>
   <div id='collaborative-curation'>
@@ -74,8 +78,8 @@
  <script id='curation-item' type='text/template'>
      <div class="curation-comments"><%= (_.isArray(comments) ? comments.length : comments) %></div>
      <time datetime="<%= timestamp %>">
-      <span class="date"><%= ts2dateStr(timestamp) %></span>
-      <span class="time"><%= ts2timeStr(timestamp) %></span>
+      <span class="date"><%= app.ts2dateStr(timestamp) %></span>
+      <span class="time"><%= app.ts2timeStr(timestamp) %></span>
      </time>
      <div class="curation-content">
       <%= content %>

@@ -129,10 +129,10 @@ body {
   visibility:       visible;
 }
 .curation-topic .ui-icon {
-  background-image:   url(../../css/images/ui-icons_888888_256x240.png);
+  background-image:   url(images/ui-icons_888888_256x240.png);
 }
 .curation-topic .ui-icon:hover {
-  background-image:   url(../../css/images/ui-icons_2e83ff_256x240.png);
+  background-image:   url(images/ui-icons_2e83ff_256x240.png);
 }
 
 /* Hide the topic 'move-to-top' if it's already at the top */

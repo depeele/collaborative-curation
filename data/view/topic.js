@@ -1,491 +1,13 @@
-/** @brief  The item currently being dragged
- *              (if initiated by a view in *this* script).
+/** @file
+ *
+ *  A Backbone View for a single Topic.
+ *
  */
-/*jslint nomen:false,laxbreak:true,white:false,onevar:false */
-/*global addon:false,_:false,$:false,Backbone:false,console:false,document:false */
-
-var gDragging   = null;
-
-/** @brief  A simple, modal mini-dialog used for confirmations.
- *
- *  Accepts the following options:
- *      question        HTML of the question to present;
- *      confirm         The confirmation text [ 'yes' ];
- *      cancel          The cancellation text [ 'no' ];
- *
- *      primary         Which answer is primary? 'confirm' | [ 'cancel' ]
- *
- *      css             An object of CSS name/value pairs;
- *
- *      confirmed()     A callback to invoke if confirmed;
- *      cancelled()     A callback to invoke if cancelled;
- *
- *  Triggers events:
- *      'confirmed'
- *      'cancelled'
- */
-var MiniDialog  = Backbone.View.extend({
-    tagName:    'div',
-    className:  'ui-confirmation',
-
-    events: {
-        'click button':     'clickButton',
-        'render':           'render'
-    },
-
-    template:    '<div class="ui-question"><%= question %></div>'
-               + '<div class="ui-buttons">'
-               +  '<button name="yes"><%= confirm %></button>'
-               +  '<button name="no" ><%= cancel %></button>'
-               + '</div>',
-
-    /** @brief  Initialize a new instances.
-     */
-    initialize: function() {
-        var self    = this;
-
-        if (_.isString( self.template ))
-        {
-            // Resolve our template
-            var html    = self.template;
-            try {
-                //MiniDialog.prototype.template = _.template( html );
-                self.__proto__.template = _.template( html );
-            } catch(e) {
-                console.log("MiniDialog error: %s, html[ %s ]",
-                            e.message, html);
-            }
-        }
-
-        /* Include a document-level key handler to allow keyboard selection
-         * when the dialog is visible.
-         */
-        $(document).on('keydown.miniDialog', _.bind(self.keyPress, self));
-
-        if (self.options.question)
-        {
-            // We've been given data directly, render immediately.
-            self.render();
-        }
-    },
-
-    /** @brief  Render the given question.
-     */
-    render: function() {
-        var self        = this;
-        if (! self.options.question)    { return; }
-
-        var data    = _.extend({confirm:'yes',cancel:'no'}, self.options),
-            $body   = $( self.template( data ) );
-
-        self.$confirm = $body.find('button[name=yes]');
-        self.$cancel  = $body.find('button[name=no]');
-
-        if (self.options.primary === 'confirm')
-        {
-            self.$confirm.addClass('ui-priority-primary');
-            self.$cancel.addClass( 'ui-priority-secondary');
-        }
-        else
-        {
-            self.$confirm.addClass('ui-priority-secondary');
-            self.$cancel.addClass( 'ui-priority-primary');
-        }
-
-        self.$el.append( $body );
-
-        if (self.options.css)   { self.$el.css( self.options.css ); }
-
-        return self;
-    },
-
-    /** @brief  Remove this view from the DOM.
-     */
-    remove: function() {
-        var self    = this;
-
-        // Remove our document-level key handler
-        $(document).off('.miniDialog');
-
-        self.$el.hide('fast', function() {
-            self.$el.remove();
-        });
-        return self;
-    },
-
-    /************************************************************************
-     * Event handlers
-     *
-     */
-    keyPress: function(e) {
-        var self    = this;
-        if (! self.$el.is(':visible'))  { return; }
-
-        switch (e.which)
-        {
-        case 13:    // ENTER
-            if (self.options.primary === 'confirm')
-            {
-                self.$confirm.click();
-                return;
-            }
-            // fall through
-
-        case 27:    // ESC
-            self.$cancel.click();
-            break;
-        }
-    },
-
-    clickButton: function(e) {
-        var self    = this,
-            $button = $(e.target);
-
-        switch ($button.attr('name'))
-        {
-        case 'yes':
-            if (_.isFunction(self.options.confirmed))
-            {
-                self.options.confirmed();
-            }
-            self.$el.trigger('confirmed');
-            break;
-
-        case 'no':
-            if (_.isFunction(self.options.cancelled))
-            {
-                self.options.cancelled();
-            }
-            self.$el.trigger('canceled');
-            break;
-        }
-
-        // And, remove ourselves
-        self.remove();
-    }
-});
-
-
-/** @brief  A Backbone View for a list of Topics.  This is the primary view.
- */
-var TopicsView  = Backbone.View.extend({
-    events:     {
-        'keydown input.new-topic':      'topicAddKey',
-
-        'click a':                      'openInTab',
-
-        'render':                       'render',
-
-        // Drag-and-drop
-        'dragstart li':                 'dragStart',
-        'dragend   li':                 'dragEnd'
-    },
-
-    /** @brief  Initialize a new instances.
-     */
-    initialize: function() {
-        var self    = this;
-
-        self.$el.data('view', self);
-
-        /* Add a document-level 'dragover' handler to allow dropping at any
-         * location within the sidebar
-         */
-        $(document).on('dragover', _.bind(self.dragOver, self));
-
-        /* Add a document-level 'drop' handler to take care of 'drop' events
-         * that have been proxied to the sidebar document via
-         * sbDndProxy()/sbDrop() in the sidebar addon as 'dropExternal' events
-         * -- most likely because an item was dropped on the splitter while the
-         * sidebar was closed.
-         */
-        $(document).on('dropExternal', _.bind(self.dragDrop, self));
-
-        // Cache element references
-        self.$topicInput = self.$el.find('.new-topic');
-        self.$topics     = self.$el.find('.curation-topics');
-
-        // Listen for 'message' events from the addon.
-        addon.on('message', self.addonMessage.bind(self));
-
-        if (self.options.model)
-        {
-            // We've been given data directly, render immediately.
-            self.render();
-        }
-        else
-        {
-            /* We've not been given any data to render.
-             *
-             * Notify the addon that we're ready and wait for data to render.
-             */
-            addon.postMessage({
-                src:    'sidebar-content',
-                action: 'loaded',
-                url:    'js/topics-sidebar.js'
-            });
-        }
-    },
-
-    /** @brief  Handle an incoming message from the addon.
-     *  @param  msg     The message data:
-     *                      {action: *action*, action-secific-data}
-     *                          Valid actions:
-     *                              'load',         topics:[]
-     *                              'currentUrl',   url:'...'
-     */
-    addonMessage: function(msg) {
-        var self    = this;
-
-        switch (msg.action)
-        {
-        case 'load':
-            console.log("TopicsView:addonMessage(): "
-                        +   "'setModel' from[ %s ], %d topics",
-                        msg.src, msg.topics.length);
-
-            self.setModel( msg.topics );
-            break;
-
-        case 'currentUrl':
-            console.log("TopicsView:addonMessage(): "
-                        +   "'currentUrl' from[ %s ], url[ %s ]",
-                        msg.src, msg.url);
-
-            self.currentUrl( msg.url );
-            break;
-
-        default:
-            console.log("TopicsView:addonMessage(): unhandled message %j",
-                        msg);
-            break;
-        }
-    },
-
-    /** @brief  Set a new model and trigger a (re)render.
-     *  @param  model   An array of Topic records, each of the form:
-     *                      {title: topic,
-     *                       items: []}
-     */
-    setModel: function(model) {
-        var self    = this;
-
-        self.options.model = model;
-
-        self.render();
-
-        return self;
-    },
-
-    /** @brief  Used by main to communicate the URL of the currently active
-     *          tab.
-     *  @param  url     The url;
-     */
-    currentUrl: function(url) {
-        var self    = this;
-
-        //console.log("TopicsView::currentUrl(): url[ %s ]", url);
-
-        self._currentUrl = url;
-
-        return self;
-    },
-
-    /** @brief  Render the given set of topics.
-     */
-    render: function() {
-        var self    = this,
-            topics  = self.options.model;
-        if (! topics)   { return; }
-
-        console.log("TopicsView::render(): %d topics", topics.length);
-
-        self.$topics.empty();
-        topics.forEach(function(topic) {
-            var view    = new TopicView({model: topic});
-
-            self.$topics.append( view.$el );
-        });
-
-        return self;
-    },
-
-    /** @brief  Add a new topic.
-     *  @param  topic   The topic model.
-     *
-     *  @return The new TopicView
-     */
-    addTopic: function(topic) {
-        var self    = this;
-            view    = new TopicView({model: topic});
-
-        self.$topics.append( view.$el );
-
-        return view;
-    },
-
-    /************************************************************************
-     * Event handlers
-     *
-     */
-    topicAddKey: function(e) {
-        var self    = this,
-            val     = self.$topicInput.val();
-
-        switch (e.which)
-        {
-        case 13:    // ENTER
-            if (val.length > 0)
-            {
-                // Add a new topic
-                self.addTopic({
-                    title:  val,
-                    items:  []
-                });
-
-                self.$topicInput.val('');
-                self.$topicInput.blur();
-
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            break;
-
-        case 27:    // ESC
-            self.$topicInput.val('');
-            self.$topicInput.blur();
-            break;
-        }
-
-    },
-
-    openInTab: function(e) {
-        var self    = this,
-            $a      = $(e.target);
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        console.log("TopicsView::openInTab(): "
-                    +   "%s, %sshift, %sctrl, %salt, %smeta",
-                $a.attr('href'),
-                (e.shiftKey ? ' ' : '!'),
-                (e.altKey   ? ' ' : '!'),
-                (e.ctrlKey  ? ' ' : '!'),
-                (e.metaKey  ? ' ' : '!'));
-
-        // Request a visit to the target href.
-        addon.postMessage({
-            src:    'sidebar-content',
-            action: 'visit',
-            url:    $a.attr('href'),
-            current:(! e.metaKey)
-        });
-    },
-
-    /**********************
-     * Drag-and-drop
-     *
-     */
-    dragStart: function(e) {
-        var self            = this,
-            dataTransfer    = (e.dataTransfer
-                                ? e.dataTransfer
-                                : e.originalEvent.dataTransfer);
-
-        if (! dataTransfer) { return; }
-
-        var $src    = $(e.target);
-        if (! $src.attr('draggable'))
-        {
-            // Immediate propagate up to the top-level 'draggable'
-            $src = $src.parents('[draggable]:first');
-        }
-
-        /*
-        var $tags   = $src.parent().find( $src.prop('tagName') );
-        console.log("drag start: src[ %s-%d.%s ]",
-                    $src.prop('tagName'),
-                    $tags.index($src),
-                    $src.attr('class'));
-        // */
-
-        $src.addClass('dragging');
-        gDragging  = $src;
-
-        //dataTransfer.effectAllowed = 'move';
-        dataTransfer.setData('text/html', $src.html());
-        dataTransfer.setData('application/x-moz-node', $src[0]);
-    },
-    dragEnd: function(e) {
-        var self    = this,
-            $src    = (gDragging ? gDragging : $(e.target));
-
-        /*
-        var $tags   = $src.parent().find( $src.prop('tagName') );
-        console.log("drag end: src[ %s-%d.%s ]",
-                    $src.prop('tagName'),
-                    $tags.index($src),
-                    $src.attr('class'));
-        // */
-
-        $src.removeClass('dragging');
-
-        gDragging  = null;
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        return false;
-    },
-
-    // Document-level drag-and-drop handlers
-    dragOver: function(e) {
-        var self            = this,
-            dataTransfer    = (e.dataTransfer
-                                ? e.dataTransfer
-                                : e.originalEvent.dataTransfer);
-
-        dataTransfer.dropEffect = (gDragging ? 'move' : 'copy');
-        e.preventDefault();
-    },
-
-    dragDrop: function(e) {
-        var self    = this;
-
-        console.log("TopicsView::dragDrop:");
-
-        /* Create a new proxied event containing the incoming 'detail'
-         * (dataTransfer) data and trigger that event on the first
-         * '.curation-topic'.
-         */
-        var proxied     = $.Event('dropExternal', {
-                                    detail: e.originalEvent.detail
-                                  }),
-            $topic      = self.$el.find('.curation-topic:first');
-
-        console.log("TopicsView::dragDrop: topic[ %s ]", $topic);
-        if ($topic.length < 1)
-        {
-            /* There are NO topics currently defined.
-             *
-             * Create and add a new one, and use IT as the target.
-             */
-            var view    = self.addTopic({
-                            title:  'New Topic',
-                            items:  []
-                          });
-            $topic = view.$el;
-        }
-
-        console.log("TopicsView::dragDrop: topic2[ %s ]", $topic);
-        $topic.trigger( proxied );
-    }
-});
-
-/** @brief  A Backbone View for a single Topic
- */
-var TopicView   = Backbone.View.extend({
+(function() {
+var root    = this,
+    app     = root.app;
+
+app.view.TopicView  = Backbone.View.extend({
     tagName:    'li',
     className:  'curation-topic',
 
@@ -526,7 +48,7 @@ var TopicView   = Backbone.View.extend({
             // Resolve our template
             var html    = $(self.template).html();
             try {
-                //TopicView.prototype.template = _.template( html );
+                //app.view.TopicView.prototype.template = _.template( html );
                 self.__proto__.template = _.template( html );
             } catch(e) {
                 console.log("Template error: %s, html[ %s ]", e.message, html);
@@ -589,7 +111,7 @@ var TopicView   = Backbone.View.extend({
          * each.
          */
         topic.items.forEach(function(item) {
-            var view    = new ItemView({model: item});
+            var view    = new app.view.ItemView({model: item});
             
             self.$items.append( view.$el );
         });
@@ -662,7 +184,7 @@ var TopicView   = Backbone.View.extend({
             pos     = $button.position();
 
         // Present a confirmation mini-dialog
-        var confirm = new MiniDialog({
+        var confirm = new app.view.MiniDialog({
                         question:   'Delete this topic<br />and all items?',
                         css:        {
                             'z-index':  self.$controls.css('z-index') + 1,
@@ -730,19 +252,19 @@ var TopicView   = Backbone.View.extend({
             dataTransfer    = (e.dataTransfer
                                 ? e.dataTransfer
                                 : e.originalEvent.dataTransfer),
-            $src            = gDragging,
+            $src            = app.dragging,
             canDrop         = (dataTransfer && self.canDrop($src));
 
         //console.log("TopicView::dragOver()");
 
         if (! canDrop)  { return; }
 
-        dataTransfer.dropEffect = (gDragging ? 'move' : 'copy');
+        dataTransfer.dropEffect = (app.dragging ? 'move' : 'copy');
         e.preventDefault();
     },
     dragEnter: function(e) {
         var self        = this,
-            $src        = gDragging,
+            $src        = app.dragging,
             $tgt        = $(e.target).closest(
                             (! $src || $src.hasClass('curation-item')
                                 ? '.curation-item,.curation-topic'
@@ -786,7 +308,7 @@ var TopicView   = Backbone.View.extend({
     },
     dragLeave: function(e) {
         var self        = this,
-            $src        = gDragging,
+            $src        = app.dragging,
             $tgt        = $(e.target).closest(
                             (! $src || $src.hasClass('curation-item')
                                 ? '.curation-item,.curation-topic'
@@ -827,13 +349,14 @@ var TopicView   = Backbone.View.extend({
                                 : e.originalEvent.dataTransfer);
         if (! dataTransfer) { return; }
 
-        if (! self.canDrop( gDragging ))    { return; }
+        if (! self.canDrop( app.dragging ))    { return; }
 
-        var $src    = (gDragging || $(dataTransfer.mozSourceNode));
+        var $src    = (app.dragging || $(dataTransfer.mozSourceNode));
         if (! $src) { return; }
 
         var $tgt    = $(e.target).closest(
-                        (! gDragging || gDragging.hasClass('curation-item')
+                        (! app.dragging ||
+                           app.dragging.hasClass('curation-item')
                             ? '.curation-item,.curation-topic'
                             : '.curation-topic'));
 
@@ -859,11 +382,12 @@ var TopicView   = Backbone.View.extend({
          *  event fired.
          *
          *  If that's working correctly, we should *never* reach this point
-         *  without a valid in 'gDragging'.
+         *  without a valid in 'app.dragging'.
          */
-        if (! gDragging)
+        if (! app.dragging)
         {
-            console.log("TopicView::dragDrop: *** gDragging shouldn't be null");
+            console.log("TopicView::dragDrop: *** "
+                        +   "app.dragging shouldn't be null");
             return;
         }
 
@@ -910,7 +434,8 @@ var TopicView   = Backbone.View.extend({
                     dataTransfer);
 
         var $tgt    = $(e.target).closest(
-                        (! gDragging || gDragging.hasClass('curation-item')
+                        (! app.dragging ||
+                           app.dragging.hasClass('curation-item')
                             ? '.curation-item,.curation-topic'
                             : '.curation-topic'));
 
@@ -930,7 +455,7 @@ var TopicView   = Backbone.View.extend({
 
         // Create new item(s) add them to the item list.
         _.each(items, function(item) {
-            var view    = new ItemView({model:item});
+            var view    = new app.view.ItemView({model:item});
             if ($after.length < 1)
             {
                 // First child
@@ -957,261 +482,7 @@ var TopicView   = Backbone.View.extend({
     }
 });
 
-/** @brief  A Backbone View for a single Item
- */
-var ItemView    = Backbone.View.extend({
-    tagName:    'li',
-    className:  'curation-item',
-
-    events:     {
-        'render':                   'render',
-
-        'click .control-visit':     'ctrlVisit',
-        'click .control-delete':    'ctrlDelete'
-    },
-
-    template:   '#curation-item',
-
-    /** @brief  Initialize a new instances.
-     */
-    initialize: function() {
-        var self    = this;
-
-        self.$el.data('view', self);
-
-        if (_.isString( self.template ))
-        {
-            // Resolve our template
-            var html    = $(self.template).html();
-            try {
-                //ItemView.prototype.template = _.template( html );
-                self.__proto__.template = _.template( html );
-            } catch(e) {
-                console.log("Template error: %s, html[ %s ]", e.message, html);
-            }
-        }
-
-        if (self.options.model)
-        {
-            // Trigger an initial rendering
-            self.render();
-        }
-    },
-
-    /** @brief  Set a new model and trigger a (re)render.
-     *  @param  model   An Item model of the form:
-     *                      {id:        uid,
-     *                       timestamp: timestamp,
-     *                       content:   content,
-     *                       url:       source-page url,
-     *                       location:  inter-page location (id),
-     *                       selector:  inter-page selector (starting at id),
-     *                       topicId:   id of containing topic,
-     *                       order:     sort order,
-     *                       comments:  []}
-     */
-    setModel: function(model) {
-        var self    = this;
-
-        console.log("ItemView::setModel(): id[ %s ]", model.id);
-
-        self.options.model = model;
-
-        self.render();
-
-        return self;
-    },
-
-    /** @brief  Render this item.
-     */
-    render: function() {
-        var self    = this,
-            item    = self.options.model;
-        if (! item) { return; }
-
-        self.$el.attr('draggable', true);
-        self.$el.html( self.template(item) );
-
-        self.$controls = self.$el.find('.curation-controls');
-
-        return self;
-    },
-
-    /************************************************************************
-     * Event handlers
-     *
-     */
-    ctrlVisit: function(e) {
-        var self    = this;
-
-        console.log("ItemView::ctrlVisit(): item[ %s ]",
-                    JSON.stringify(self.options.model));
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Request a visit to the target href.
-        addon.postMessage({
-            src:        'sidebar-content',
-            action:     'visit',
-            url:        self.options.model['url'],
-            location:   self.options.model['location'],
-            selector:   '',
-            current:    (! e.metaKey)
-        });
-    },
-    ctrlDelete: function(e) {
-        var self    = this,
-            $button = $(e.target),
-            pos     = $button.position();
-
-        // Present a confirmation mini-dialog
-        var confirm = new MiniDialog({
-                        question:   'Delete this item?',
-                        css:        {
-                            'z-index':  10,
-                            'top':      pos.top,
-                            'left':     0
-                        },
-                        confirmed:  function() {
-                            console.log("ItemView::Delete (%s)",
-                                        self.options.model.id);
-                            self.$el.hide('fast', function() {
-                                self.remove();
-                            });
-                        }
-                      });
-
-        self.$el.append( confirm.$el );
-    },
-});
-
-$(document).ready(function() {
-    //console.log("js/topics-sidebar.js: Document Ready.");
-
-    // Establish our primary view
-    var $curation   = $('#collaborative-curation'),
-        view        = new TopicsView({el: $curation});
-});
-
-//console.log("js/topics-sidebar.js loaded");
-
 /****************************************************************************
- * Logging {
- *
- *  Override console.log() to send data for logging to the plugin.
- */
-
-/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
- *          write the result to the console.
- *  @param  fmt     The printf format string;
- *  @param  args    Following arguments to fulfill 'fmt';
- */
-console.log = function(fmt, args) {
-    args = Array.slice(arguments);
-
-    addon.postMessage({src:      'sidebar-content',
-                       action:   'log',
-                       str:      sprintf.apply(this, args)
-                       //args:     args
-    });
-};
-
-/** @brief  Perform printf-like formatting of the provided 'fmt' and 'args' and
- *          return the resulting string.
- *  @param  fmt     The printf format string;
- *  @param  args    Following arguments to fulfill 'fmt';
- *
- *  @return The generated string.
- */
-function sprintf(fmt, args)
-{
-    var str = '';
-    if (! Array.isArray(args))
-    {
-        args = Array.slice(arguments, 1);
-    }
-
-    /********************************************
-     * Process the provided 'fmt' and 'args'
-     *  %s  = string
-     *  %d  = integer (decimal)
-     *  %x  = integer (hexadecimal, 0x)
-     *  %o  = integer (octal,       0)
-     *  %f  = floating point
-     *  %g  = floating point
-     *  %j  = JSON
-     */
-    var matches = fmt.match(/(\%[sdxofgj])/g),
-        pos     = 0;
-
-    if (matches && (matches.length > 0))
-    {
-        for (var idex = 0, len = Math.min(matches.length, args.length);
-                idex < len;
-                    ++idex)
-        {
-            var match       = matches[idex],
-                arg         = args[idex],
-                posMatch    = fmt.indexOf(match, pos);
-            if (posMatch > pos)
-            {
-                str += fmt.slice(pos, posMatch);
-                pos  = posMatch;
-            }
-
-            var formatted   = '?';
-            try {
-                switch (match[1])
-                {
-                // String
-                case 's':
-                    formatted = (arg ? arg : '');
-                    break;
-
-                // Integer
-                case 'd':
-                    formatted = (arg ? parseInt(arg, 10) : formatted);
-                    break;
-
-                case 'x':
-                    formatted = (arg ? parseInt(arg, 16) : formatted);
-                    break;
-
-                case 'o':
-                    formatted = (arg ? parseInt(arg, 8) : formatted);
-                    break;
-
-                // Floating point
-                case 'f':
-                case 'g':
-                    formatted = (arg ? parseFloat(arg) : formatted);
-                    break;
-
-                // JSON
-                case 'j':
-                    formatted = (arg ? JSON.stringify(arg) : formatted);
-                    break;
-                }
-            } catch(e) {
-                formatted = "**Format Error: "+ e.message;
-            }
-
-            str += (formatted.toString ? formatted.toString() : '');
-            pos += match.length;
-        }
-    }
-
-    if (pos < fmt.length)
-    {
-        str += fmt.slice(pos);
-    }
-
-    return str;
-}
-
-/* Logging }
- ****************************************************************************
  * drag-and-drop {
  *
  */
@@ -1484,39 +755,6 @@ function dataTransfer2Items(topic, dataTransfer)
     return items;
 }
 /* drag-and-drop }
- ****************************************************************************
- * Date Formatting utilities {
- *
- *  Called from the '#curation-topic' template applied in render().
- *  The template itself is defined in data/view/topics/index.html
- *
- */
-function padNum(num, len)
-{
-    len = len || 2;
-    num = ''+ num;
-
-    return '00000000'.substr(0, len - num.length) + num;
-}
-function ts2timeStr(ts)
-{
-    var date        = new Date(ts),
-        hour        = date.getHours(),
-        meridian    = 'a';
-
-    if      (hour >   12)   { meridian = 'p'; hour -= 12; }
-    else if (hour === 12)   { meridian = 'p'; }
-
-    return hour +':'+ padNum(date.getMinutes()) + meridian;
-}
-function ts2dateStr(ts)
-{
-    var date    = new Date(ts),
-        dateStr = date.getFullYear()            +'.'
-                + padNum(date.getMonth() + 1)   +'.'
-                + padNum(date.getDate());
-
-    return dateStr;
-}
-/* Date formatting utilities }
  ****************************************************************************/
+
+}.call(this));
