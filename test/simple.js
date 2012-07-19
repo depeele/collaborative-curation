@@ -6,4 +6,4 @@ var Backbone    = require('backbone'),
 var users   = new app.Model.Users(),
     u1      = users.create({name:'user1'});
 
-console.log("u1[ %s ]", u1.get('name'));
+console.log("u1[ %j ], cid[ %s ]", u1, (u1 ? u1.cid : ''));
