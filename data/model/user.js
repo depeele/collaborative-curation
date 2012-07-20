@@ -56,7 +56,7 @@ var db          = {
 app.Model.User  = Backbone.Model.extend({
     database:   db,
     storeName:  storeName,
-    default:    {
+    defaults:   {
         id:         null,
         name:       'anonymous',
         fullName:   'Anonymous',

@@ -40,7 +40,7 @@ var db          = {
 app.Model.Item  = Backbone.Model.extend({
     database:   db,
     storeName:  storeName,
-    default:    {
+    defaults:   {
         id:         null,
         title:      null,   // Item title
         timestamp:  null,   // Time of collection

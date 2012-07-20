@@ -40,7 +40,7 @@ var db          = {
 app.Model.Comment  = Backbone.Model.extend({
     database:   db,
     storeName:  storeName,
-    default:    {
+    defaults:   {
         id:         null,
         text:       null,   // The comment text/html
         created:    null,   // Time of creation

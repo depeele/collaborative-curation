@@ -11,7 +11,7 @@
 (function() {
 var root        = this,
     app         = root.app,
-    Backbone    = root.app,
+    Backbone    = root.Backbone,
     storeName   = 'topics';
 
 // Allow use with CommonJS / node.js {
@@ -40,7 +40,7 @@ var db          = {
 app.Model.Topic  = Backbone.Model.extend({
     database:   db,
     storeName:  storeName,
-    default:    {
+    defaults:   {
         id:         null,
         name:       'Topic'
     },
