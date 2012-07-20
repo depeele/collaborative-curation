@@ -7,14 +7,10 @@ var root   = this;
     app    = {
         View:       {},
         Model:      {},
-        Database:   {
-            id:             'collaborativeCuration',
-            description:    'A database to store topics, items, and data '
-                            + 'associated with the collaborative collection '
-                            + 'and curation of related data as well as the '
-                            + 'final creation of reports based upon the '
-                            + 'collected data.',
-        },
+        Database:   {},
+
+        /** @brief  Initialize the database (override in database.js) */
+        Database_init:  function()  {},
 
         /** @brief  The item currently being dragged
          *              (if initiated by a view in *this* app).
@@ -27,11 +23,31 @@ var root   = this;
 app.ready = function() {
     //console.log("app.js: Ready.");
 
+    // Initialize our database connection
+    app.Database_init();
+
     // Establish our primary view
     var $curation   = $('#collaborative-curation'),
         view        = new app.View.TopicsView({el: $curation});
 
-    /* Generate / Retrieve topic data
+    // Generate / Retrieve topic data
+    console.log("app: Ready -- retrieve topics...");
+    try {
+    var topics  = new app.Model.Topics();
+    topics.fetch({
+        success: function(topics, response) {
+            console.log("app: Retrieved %d topics", topics.length);
+            view.setModel( topics );
+        },
+        error:   function(topics, response) {
+            console.log("app: Fetch ERROR: %s", response);
+        }
+    });
+    } catch(e) {
+        console.log("app: Fetch exception: %s", e.message);
+    }
+
+    /* Generate pseudo topic data
     var now     = new Date(),
         topics  = [
             {"id":"topic-1",

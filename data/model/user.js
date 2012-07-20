@@ -21,40 +21,23 @@ if (typeof require !== 'undefined')
 }
 // Allow use in with CommonJS /.js }
 
-var db          = {
-        id:             app.Database.id,
-        description:    app.Database.description,
-        migrations:     [{
-            version:    1,
-            migrate:    function(transaction, next) {
-                var store   = transaction.db.createObjectStore( storeName );
-                next();
-            }
-        } /*, {
-            version:    2,
-            migrate:    function(transaction, next) {
-                var store;
-                if (! transaction.db.objectStoreNames.contains( storeName ))
-                {
-                    store = transaction.db.createObjectStore( storeName );
-                }
-                store = transaction.objectStore( storeName );
-
-                store.createIndex('titleIndex', 'title', {
-                    unique: false
-                });
-                store.createIndex('formatIndex', 'format', {
-                    unique: false
-                });
-                next();
-            }
+// Include user-specific data migrations
+app.Database.migrations.push({
+    version:    1,
+    migrate:    function(transaction, next) {
+        try {
+            transaction.db.createObjectStore( storeName );
+        } catch(e) {
+            console.log("Model.User:migrate(): FAILED to create '%s': %s",
+                        storeName, e.message);
         }
-        */
-        ]
-    };
+
+        next();
+    }
+});
 
 app.Model.User  = Backbone.Model.extend({
-    database:   db,
+    database:   app.Database,
     storeName:  storeName,
     defaults:   {
         id:         null,
@@ -65,7 +48,7 @@ app.Model.User  = Backbone.Model.extend({
 });
 
 app.Model.Users = Backbone.Collection.extend({
-    database:   db,
+    database:   app.Database,
     storeName:  storeName,
     model:      app.Model.User
 });

@@ -22,23 +22,31 @@ if (typeof require !== 'undefined')
 }
 // Allow use in with CommonJS /.js }
 
-var db          = {
-        id:             app.Database.id,
-        description:    app.Database.description,
-        migrations:     [{
-            version:    1,
-            migrate:    function(transaction, next) {
-                var store   = transaction.db.createObjectStore( storeName );
+// Include item-specific data migrations
+app.Database.migrations.push({
+    version:    1,
+    migrate:    function(transaction, next) {
+        var store;
+        try {
+            var store   = transaction.db.createObjectStore( storeName );
+            console.log("Model.Item:migrate(): created '%s'", storeName);
 
-                store.createIndex('srcUrlIndex', 'srcUrl', {unique: false});
+            store.createIndex('topicIdIndex', 'topicId', {unique: false});
+            console.log("Model.Item:migrate(): created 'topicId' index");
 
-                next();
-            }
-        }]
-    };
+            store.createIndex('srcUrlIndex', 'srcUrl', {unique: false});
+            console.log("Model.Item:migrate(): created 'srcUrl' index");
+        } catch(e) {
+            console.log("Model.Item:migrate(): FAILED to create '%s': %s",
+                        storeName, e.message);
+        }
+
+        next();
+    }
+});
 
 app.Model.Item  = Backbone.Model.extend({
-    database:   db,
+    database:   app.Database,
     storeName:  storeName,
     defaults:   {
         id:         null,
@@ -91,7 +99,7 @@ app.Model.Item  = Backbone.Model.extend({
 });
 
 app.Model.Items = Backbone.Collection.extend({
-    database:   db,
+    database:   app.Database,
     storeName:  storeName,
     model:      app.Model.Item
 });

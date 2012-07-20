@@ -22,23 +22,23 @@ if (typeof require !== 'undefined')
 }
 // Allow use in with CommonJS /.js }
 
-var db          = {
-        id:             app.Database.id,
-        description:    app.Database.description,
-        migrations:     [{
-            version:    1,
-            migrate:    function(transaction, next) {
-                var store   = transaction.db.createObjectStore( storeName );
+// Include comment-specific data migrations
+app.Database.migrations.push({
+    version:    1,
+    migrate:    function(transaction, next) {
+        try {
+            transaction.db.createObjectStore( storeName );
+        } catch(e) {
+            console.log("Model.Comment:migrate(): FAILED to create '%s': %s",
+                        storeName, e.message);
+        }
 
-                store.createIndex('srcUrlIndex', 'srcUrl', {unique: false});
-
-                next();
-            }
-        }]
-    };
+        next();
+    }
+});
 
 app.Model.Comment  = Backbone.Model.extend({
-    database:   db,
+    database:   app.Database,
     storeName:  storeName,
     defaults:   {
         id:         null,
@@ -73,8 +73,8 @@ app.Model.Comment  = Backbone.Model.extend({
 });
 
 app.Model.Comments = Backbone.Collection.extend({
-    database:   db,
-    storeName:  storeName,
+    database:   app.Database,
+    storeName:  app.Database.store,
     model:      app.Model.Comment
 });
 
