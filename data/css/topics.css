@@ -144,9 +144,13 @@ body {
 .curation-topic > header:hover .curation-controls {
   visibility:       visible;
 }
+.curation-topic [class^="ui-icon-"],
+.curation-topic [class*=" ui-icon-"],
 .curation-topic .ui-icon {
   background-image:   url(images/ui-icons_888888_256x240.png);
 }
+.curation-topic [class^="ui-icon-"]:hover,
+.curation-topic [class*=" ui-icon-"]:hover,
 .curation-topic .ui-icon:hover {
   background-image:   url(images/ui-icons_2e83ff_256x240.png);
 }

@@ -108,7 +108,10 @@ button.ui-priority-primary[disabled] {
 /****************************************************************************
  * Icons {
  *  borrowed from jquery-ui with slight modification of the base .ui-icon
+ *  with influence from bootstrap
  */
+[class^="ui-icon-"],
+[class*=" ui-icon-"],
 .ui-icon {
   display:            inline-block;
 
@@ -123,6 +126,8 @@ button.ui-priority-primary[disabled] {
   background-repeat:  no-repeat;
   cursor:             pointer;
 }
+[class^="ui-icon-"]:hover,
+[class*=" ui-icon-"]:hover,
 .ui-icon:hover {
   background-image:   url(images/ui-icons_222222_256x240.png);
 }

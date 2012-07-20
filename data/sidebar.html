@@ -65,15 +65,15 @@
       ><input type='text' /></div
     ></h1>
     <div class='curation-controls'
-     ><div class="control-edit ui-icon ui-icon-pencil"
-           data-action='edit'
-           title="edit">edit</div
-     ><div class="control-delete ui-icon ui-icon-trash"
-           data-action='delete'
-           title='delete'>delete</div
-      ><div class="control-move-top ui-icon ui-icon-arrowthickstop-1-n"
-            data-action='moveTop'
-            title='move to top'>move to top</div
+     ><i class="control-edit ui-icon-pencil"
+         data-action='edit'
+         title="edit">edit</i
+     ><i class="control-delete ui-icon-trash"
+         data-action='delete'
+         title='delete'>delete</i
+     ><i class="control-move-top ui-icon-arrowthickstop-1-n"
+          data-action='moveTop'
+          title='move to top'>move to top</i
     ></div>
    </header>
    <ul class="curation-items">
@@ -91,13 +91,13 @@
       <%= content %>
      </div>
      <div class='curation-controls'
-      ><a class="control-visit ui-icon ui-icon-extlink"
-            data-action='visit'
-            href="<%= url %><%= (_.isEmpty(location) ? '' : location) %>"
-            title="visit">visit</a
-      ><div class="control-delete ui-icon ui-icon-trash"
-            data-action='delete'
-            title='delete'>delete</div
+      ><a class="control-visit ui-icon-extlink"
+          data-action='visit'
+          href="<%= url %><%= (_.isEmpty(location) ? '' : location) %>"
+          title="visit">visit</a
+      ><i class="control-delete ui-icon-trash"
+          data-action='delete'
+          title='delete'>delete</i
      ></div>
  </script>
 </html>
