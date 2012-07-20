@@ -403,7 +403,14 @@
             }
 
             if (typeof (readCursor) == "undefined" || !readCursor) {
-                options.error("No Cursor");
+                var err = "No Cursor";
+                if (options.conditions) {
+                    err += ': no index for one or more of '+ storeName
+                        +   '.['
+                        +       _.keys(options.conditions).join(' | ')
+                        +   ']';
+                }
+                options.error(err);
             } else {
                 readCursor.onerror = function(e){
                     options.error("readCursor error", e);
