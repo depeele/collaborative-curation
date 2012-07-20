@@ -63,7 +63,7 @@ app.View.TopicView  = Backbone.View.extend({
     },
 
     /** @brief  Set a new model and trigger a (re)render.
-     *  @param  model   A Topic model of the form:
+     *  @param  model   An app.Model.Topic instance with properties:
      *                      {id:    uid,
      *                       title: topic,
      *                       order: sort-order,
@@ -72,12 +72,15 @@ app.View.TopicView  = Backbone.View.extend({
     setModel: function(model) {
         var self    = this;
 
-        console.log("TopicView::setModel(): topic[ %s ], %d items",
-                model.title, model.items.length);
+        if (model instanceof app.Model.Topic)
+        {
+            console.log("TopicView::setModel(): topic[ %s ], %d items",
+                    model.get('title'), model.items().length);
 
-        self.options.model = model;
+            self.options.model = model;
 
-        self.render();
+            self.render();
+        }
 
         return self;
     },
@@ -89,7 +92,11 @@ app.View.TopicView  = Backbone.View.extend({
             topic   = self.options.model;
         if (! topic)    { return; }
 
-        var $topic  = $( self.template(topic) );
+        console.log("TopicView::render(): model[ %j ]", topic);
+
+        var $topic  = $( self.template(topic.toJSON()) );
+
+        console.log("TopicView::render(): template rendered...");
 
         self.$el.attr('draggable', true);
         self.$el.empty();
@@ -110,10 +117,17 @@ app.View.TopicView  = Backbone.View.extend({
         /* Create each page and item individually so we can attach data to
          * each.
          */
-        topic.items.forEach(function(item) {
-            var view    = new app.View.ItemView({model: item});
+        topic.items({
+            success: function(items) {
+                console.log("TopicView::render(): retrieved %d items",
+                            items.length);
+
+                items.forEach(function(item) {
+                    var view    = new app.View.ItemView({model: item});
             
-            self.$items.append( view.$el );
+                    self.$items.append( view.$el );
+                });
+            }
         });
 
         return self;
@@ -459,24 +473,32 @@ app.View.TopicView  = Backbone.View.extend({
         // */
 
         // Create new item(s) add them to the item list.
-        _.each(items, function(item, itemIndex) {
+        _.each(items, function(data, itemIndex) {
             /*
             console.log("TopicView::dragDropExternal: item %d: %j",
-                        itemIndex, item);
+                        itemIndex, data);
             // */
 
-            var view    = new app.View.ItemView({model:item});
-            if ((! $after) || ($after.length < 1))
-            {
-                // First child
-                self.$items.append( view.$el );
-            }
-            else
-            {
-                view.$el.insertAfter( $after );
-            }
+            var item    = new app.Model.Item( data );
+            item.save(null, {
+                success: function(item) {
+                    var view        = new app.View.ItemView({model:item}),
+                        $myAfter    = $after;
 
-            $after = view.$el;
+                    $after = view.$el;
+
+                    if ((! $myAfter) || ($myAfter.length < 1))
+                    {
+                        // First child
+                        self.$items.append( view.$el );
+                    }
+                    else
+                    {
+                        view.$el.insertAfter( $myAfter );
+                    }
+                }
+            });
+
         });
 
         /* Directly remove the 'drag-over' class on $tgt since 'dragleave' will

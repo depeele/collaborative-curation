@@ -103,16 +103,25 @@ app.View.TopicsView = Backbone.View.extend({
     },
 
     /** @brief  Set a new model and trigger a (re)render.
-     *  @param  model   An array of Topic records, each of the form:
-     *                      {title: topic,
-     *                       items: []}
+     *  @param  model   An app.Model.Topics instance which is a Backbone
+     *                  Collection of app.Model.Topic instances.
      */
     setModel: function(model) {
         var self    = this;
 
-        self.options.model = model;
+        if (model instanceof app.Model.Topics)
+        {
+            console.log("TopicsView::setModel(): %d topics",
+                        model.length);
 
-        self.render();
+            self.options.model = model;
+
+            self.render();
+        }
+        else
+        {
+            console.log("TopicsView::setModel(): Invalid model [ %s ]", model);
+        }
 
         return self;
     },
@@ -141,7 +150,9 @@ app.View.TopicsView = Backbone.View.extend({
         console.log("TopicsView::render(): %d topics", topics.length);
 
         self.$topics.empty();
-        topics.forEach(function(topic) {
+        topics.forEach(function(topic, idex) {
+            console.log("TopicsView::render():  topic %d: %j",
+                        idex, topic);
             var view    = new app.View.TopicView({model: topic});
 
             self.$topics.append( view.$el );
@@ -151,17 +162,37 @@ app.View.TopicsView = Backbone.View.extend({
     },
 
     /** @brief  Add a new topic.
-     *  @param  topic   The topic model.
+     *  @param  topic       The topic model.
+     *  @param  options     Backbone save options with the exception that
+     *                          success() will pass the new view instead of the
+     *                          new model;
      *
      *  @return The new TopicView
      */
-    addTopic: function(topic) {
-        var self    = this;
-            view    = new app.View.TopicView({model: topic});
+    addTopic: function(topic, options) {
+        options = options || {};
 
-        self.$topics.append( view.$el );
+        var self    = this,
+            success = options.success;
 
-        return view;
+        options.success = function(topic) {
+            var view    = new app.View.TopicView({model: topic});
+            self.$topics.append( view.$el );
+
+            if (success)    { success(view); }
+        };
+
+        if (! (topic instanceof app.Model.Topic))
+        {
+            topic = new app.Model.Topic( topic );
+            topic.save( null, options );
+        }
+        else
+        {
+            options.success(topic);
+        }
+
+        return self;
     },
 
     /************************************************************************
@@ -178,10 +209,7 @@ app.View.TopicsView = Backbone.View.extend({
             if (val.length > 0)
             {
                 // Add a new topic
-                self.addTopic({
-                    title:  val,
-                    items:  []
-                });
+                self.addTopic({title:val});
 
                 self.$topicInput.val('');
                 self.$topicInput.blur();
@@ -311,15 +339,17 @@ app.View.TopicsView = Backbone.View.extend({
              *
              * Create and add a new one, and use IT as the target.
              */
-            var view    = self.addTopic({
-                            title:  'New Topic',
-                            items:  []
-                          });
-            $topic = view.$el;
+            self.addTopic({title:'New Topic'}, {
+                success: function(view) {
+                    view.$el.trigger( proxied );
+                }
+            });
         }
-
-        //console.log("TopicsView::dragDrop: topic2[ %s ]", $topic);
-        $topic.trigger( proxied );
+        else
+        {
+            //console.log("TopicsView::dragDrop: topic2[ %s ]", $topic);
+            $topic.trigger( proxied );
+        }
     }
 });
 

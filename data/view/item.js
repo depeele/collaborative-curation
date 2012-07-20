@@ -47,7 +47,7 @@ app.View.ItemView   = Backbone.View.extend({
     },
 
     /** @brief  Set a new model and trigger a (re)render.
-     *  @param  model   An Item model of the form:
+     *  @param  model   An app.Model.Item instance, with properties:
      *                      {id:        uid,
      *                       timestamp: timestamp,
      *                       content:   content,
@@ -61,11 +61,14 @@ app.View.ItemView   = Backbone.View.extend({
     setModel: function(model) {
         var self    = this;
 
-        console.log("ItemView::setModel(): id[ %s ]", model.id);
+        if (model instanceof app.Model.Item)
+        {
+            console.log("ItemView::setModel(): id[ %s ]", model.id);
 
-        self.options.model = model;
+            self.options.model = model;
 
-        self.render();
+            self.render();
+        }
 
         return self;
     },
@@ -78,7 +81,7 @@ app.View.ItemView   = Backbone.View.extend({
         if (! item) { return; }
 
         self.$el.attr('draggable', true);
-        self.$el.html( self.template(item) );
+        self.$el.html( self.template(item.toJSON()) );
 
         self.$controls = self.$el.find('.curation-controls');
 
