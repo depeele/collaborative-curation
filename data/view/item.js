@@ -127,8 +127,12 @@ app.View.ItemView   = Backbone.View.extend({
                         confirmed:  function() {
                             console.log("ItemView::Delete (%s)",
                                         self.options.model.id);
-                            self.$el.hide('fast', function() {
-                                self.remove();
+                            self.options.model.destroy({
+                                success: function(model, response) {
+                                    self.$el.hide('fast', function() {
+                                        self.remove();
+                                    });
+                                }
                             });
                         }
                       });
