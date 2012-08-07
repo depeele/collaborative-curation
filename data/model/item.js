@@ -101,7 +101,11 @@ app.Model.Item  = Backbone.Model.extend({
 app.Model.Items = Backbone.Collection.extend({
     database:   app.Database,
     storeName:  storeName,
-    model:      app.Model.Item
+    model:      app.Model.Item,
+
+    comparator: function(item) {
+        return item.get('topicIndex');
+    }
 });
 
 }).call(this);

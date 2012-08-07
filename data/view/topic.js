@@ -418,6 +418,21 @@ app.View.TopicView  = Backbone.View.extend({
             }
         }
 
+        // Make a note ot ordering for each item.
+        console.log("TopicView::dragDrop: reset ordering for %d items",
+                    self.$items.length);
+
+        self.$items.children().each(function(idex) {
+            var $item   = $(this),
+                view    = $item.data('view'),
+                model   = (view ? view.model : null);
+
+            if (model)
+            {
+                model.save({'topicIndex': idex});
+            }
+        });
+
         /* Directly remove the 'drag-over' class on $tgt since 'dragleave' will
          * NOT be triggerd on the target element.
          */

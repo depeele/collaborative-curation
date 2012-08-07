@@ -14,7 +14,7 @@ app.View.ItemView   = Backbone.View.extend({
     events:     {
         'render':                   'render',
 
-        'click .control-visit':     'ctrlVisit',
+        'click a.control-visit':    'ctrlVisit',
         'click .control-delete':    'ctrlDelete'
     },
 
@@ -105,8 +105,8 @@ app.View.ItemView   = Backbone.View.extend({
         addon.postMessage({
             src:        'sidebar-content',
             action:     'visit',
-            url:        self.options.model['url'],
-            location:   self.options.model['location'],
+            url:        self.options.model.get('url'),
+            location:   self.options.model.get('location'),
             selector:   '',
             current:    (! e.metaKey)
         });

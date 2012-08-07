@@ -84,7 +84,7 @@
   max-height:         18px;
   height:             18px;
 
-  margin:             0 !important;
+  margin:             0 1px 0 0!important;
   padding:            0 !important;
   border:             0 !important;
 
@@ -109,9 +109,9 @@
  *
  */
 #curation-sidebar-splitter.state-hidden {
-  min-width:          20px !important;
-  max-width:          20px !important;
-  width:              20px !important;
+  min-width:          24px !important;
+  max-width:          24px !important;
+  width:              24px !important;
 
   background-image:   -moz-linear-gradient(left, #666, #333) !important;
 }
@@ -119,16 +119,18 @@
   display:    none;
 }
 
+.state-hidden #curation-sidebar-grip-container {
+  width:              24px;
+}
 .state-hidden #curation-sidebar-grippy {
   visibility:         visible;
-  min-width:          18px !important;
-  max-width:          18px !important;
-  width:              18px !important;
+
+  width:              18px;
   min-height:         18px !important;
   max-height:         18px !important;
   height:             18px !important;
 
-  background-color:     #444 !important;
+  background-color:     #333 !important;
   background-image:     url(../images/sidebar-icon.png);
   background-position:  center center;
   background-repeat:    no-repeat;

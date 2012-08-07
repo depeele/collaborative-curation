@@ -47,7 +47,8 @@ app.Model.Topic  = Backbone.Model.extend({
     storeName:  storeName,
     defaults:   {
         id:         null,
-        name:       'Topic'
+        name:       'Topic',
+        order:      null
     },
 
     /** @brief  Asynchronously retrieve all items associated with this topic.
@@ -65,12 +66,21 @@ app.Model.Topic  = Backbone.Model.extend({
         options.conditions = {
             topicId:    self.id
         };
-        options.success = function(items, resp) {
-            // Order 'items' according to 'topicIndex'
-            items = items.sortBy( 'topicIndex' );
 
-            console.log("Model.Topic:items(): fetched %d items[ %j ]",
-                        items.length, items);
+        options.success = function(newItems, resp) {
+            /*
+            var ids = [];
+
+            items.each(function(item) {
+                ids.push({
+                    topicIndex: item.get('topicIndex'),
+                    id:         item.id
+                });
+            });
+
+            console.log("Model.Topic:items(): fetched %d items: %j",
+                        items.length, ids);
+            // */
 
             if (success)    { success(items, resp); }
         };
@@ -96,7 +106,11 @@ app.Model.Topic  = Backbone.Model.extend({
 app.Model.Topics = Backbone.Collection.extend({
     database:   app.Database,
     storeName:  storeName,
-    model:      app.Model.Topic
+    model:      app.Model.Topic,
+
+    comparator: function(topic) {
+        return topic.get('order');
+    }
 });
 
 }).call(this);

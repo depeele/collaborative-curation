@@ -184,6 +184,8 @@ body {
   border-bottom:  1px dashed #222;
 
   /*overflow:   hidden;*/
+
+  min-height:     24px; /* At least enough for 2 controls */
 }
 /*
 .curation-item:last-child {
