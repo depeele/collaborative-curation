@@ -14,7 +14,7 @@ app.View.ItemView   = Backbone.View.extend({
     events:     {
         'render':                   'render',
 
-        'click a.control-visit':    'ctrlVisit',
+        'click .control-visit':     'ctrlVisit',
         'click .control-delete':    'ctrlDelete'
     },
 
